@@ -1,0 +1,1 @@
+Kosho's blog
