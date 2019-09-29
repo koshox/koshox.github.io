@@ -7,12 +7,12 @@ title: Github Pages + Hexo搭建博客
 
 ### 域名绑定
 
-Todo
+Todo1
 
 ### 配置Hexo
 
-Todo
+Todo2
 
 ### CI持续集成
 
-Todo
+Todo3
