@@ -87,7 +87,7 @@
 <meta property="og:site_name" content="Kosho&#39;s blog">
 <meta property="og:description" content="Just writing and coding for fun">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-10-01T06:10:10.777Z">
+<meta property="og:updated_time" content="2019-10-01T06:32:16.996Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="categories">
 <meta name="twitter:description" content="Just writing and coding for fun">
@@ -303,6 +303,13 @@
 
 
           
+
+  
+    <div class="comments" id="comments">
+      
+        <div id="gitment-container"></div>
+      
+    </div>
 
   
 
@@ -582,6 +589,43 @@
 
 
 
+
+
+<!-- LOCAL: You can save these files to your site and update links -->
+    
+        
+        <link rel="stylesheet" href="https://aimingoo.github.io/gitmint/style/default.css">
+        <script src="https://aimingoo.github.io/gitmint/dist/gitmint.browser.js"></script>
+    
+<!-- END LOCAL -->
+
+    
+
+    
+      <script type="text/javascript">
+      function renderGitment(){
+        var gitment = new Gitmint({
+            id: window.location.pathname, 
+            owner: 'koshox',
+            repo: 'koshox.github.io',
+            
+            lang: "" || navigator.language || navigator.systemLanguage || navigator.userLanguage,
+            
+            oauth: {
+            
+            
+                client_secret: '97f010895abf50a221ffb6c412a6bc51af94a439',
+            
+                client_id: '0257bbdc7139f789e280'
+            }});
+        gitment.render('gitment-container');
+      }
+
+      
+      renderGitment();
+      
+      </script>
+    
 
 
 
