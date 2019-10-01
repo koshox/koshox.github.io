@@ -7,7 +7,7 @@ categories:
 - 博客搭建
 ---
 
-现有的博客网站用着都不太满意，思来想去还是决定自己搭一个。按照惯例，第一篇文章记录下整个博客的搭建过程。整个博客基于[Hexo](https://hexo.io/zh-cn/docs/)和[Github Pages](https://pages.github.com)构建，并使用[Travis CI](https://www.travis-ci.org)持续集成，自动发布。
+现有的博客网站用着都不太满意，思来想去还是决定自己搭一个。按照惯例，第一篇文章记录下整个博客的搭建过程。博客基于[Hexo](https://hexo.io/zh-cn/docs/)和[Github Pages](https://pages.github.com)构建，并使用[Travis CI](https://www.travis-ci.org)持续集成，自动发布。
 
 <!-- more -->
 
@@ -16,7 +16,7 @@ categories:
 ### 创建Github Pages
 
 1. 注册并登陆你的Github
-2. 创建一个仓库，名为 username.github.io ，username 就是你的 Github 用户名，提交后就可以通过http://username.github.io/访问了
+2. 创建一个仓库，名为 username.github.io ，username 就是你的 Github 用户名，提交后就可以通过http://username.github.io/ 访问了
 
 ### 环境配置
 #### 安装Node.js和Git
@@ -40,7 +40,7 @@ hexo s # 启动本地web服务，可在http://localhost:4000/ 预览博客
 
 #### 购买域名
 
-域名绑定第一步当然是先去买一个域名，不然拿头绑定。有了域名就可以用自己的域名，比如说www.kosho.tech访问了，比http://username.github.io/舒服多了。
+域名绑定第一步当然是先去买一个域名，不然拿头绑定。有了域名就可以用自己的域名，比如说www.kosho.tech 访问，比http://username.github.io/ 舒服多了。
 
 那么，在哪里才能买得到呢？
 
@@ -85,7 +85,9 @@ hexo d
 但是这样还是稍微有点麻烦，每次得输入用户名密码。
 
 官方推荐的方式是利用Travis CI持续集成：https://hexo.io/zh-cn/docs/github-pages
-注意不配置分支的话，默认会把部署分支设置为gh-pages，可以像我一样，把源码分支设置为hexo，部署分支设置为master，那.travis.yml这么配置：
+注意不配置分支的话，默认会把部署分支设置为gh-pages，可以像我一样，把源码分支设置为hexo，部署分支设置为master。
+
+travis.yml：
 
 ```yaml
 sudo: false
@@ -108,7 +110,7 @@ deploy:
     branch: hexo
   local-dir: public
 ```
-这样向hexo分支提交文章，CI会帮你自动部署上去，顺滑就完事了。
+这样向hexo分支提交文章，CI会帮你自动部署到master上，顺滑就完事了。
 
 ### 继续折腾
 
@@ -123,7 +125,7 @@ deploy:
 
 等等...
 
-Hexo和Next主题默认给我们集成了很多功能，网上也有大把的文章，可以折腾出很炫酷的效果。
+Hexo和Next主题默认给我们集成了很多功能，网上也有大把的文章，比自己从头开始还是简单了很多。
 
 
 
