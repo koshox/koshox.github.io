@@ -9,7 +9,7 @@ categories:
 - 负载均衡
 ---
 
-[Canal](https://github.com/alibaba/canal)是阿里巴巴的开源项目，基于MySQL Binlog解析，提供增量数据订阅和消费，是一个广泛使用的数据同步组件。我们的业务也大量使用了Canal，用于ES同步，业务消息通知等场景，分享一下自己的实践经验。
+[Canal](https://github.com/alibaba/canal)是阿里巴巴的开源项目，基于MySQL Binlog解析，提供增量数据订阅和消费，是一个广泛使用的数据同步组件。我们的业务也大量使用了Canal，用于ES同步，业务消息通知等场景，分享一下自己的实践。
 <!-- More -->
 
 ## 直接部署Canal的方式遇到的问题
