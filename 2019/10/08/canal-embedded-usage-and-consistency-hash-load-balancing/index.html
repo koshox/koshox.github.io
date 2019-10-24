@@ -87,13 +87,13 @@
 <meta property="og:site_name" content="Kosho&#39;s blog">
 <meta property="og:description" content="Canal是阿里巴巴的开源项目，基于MySQL Binlog解析，提供增量数据订阅和消费，是一个广泛使用的数据同步组件。我们的业务也大量使用了Canal，用于ES同步，业务消息通知等场景，分享一下自己的实践。">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="http://pypc1ne42.bkt.clouddn.com/blog/20191013/canal-service.png">
-<meta property="og:image" content="http://pypc1ne42.bkt.clouddn.com/blog/20191013/canal-consistent-hashing2.png">
-<meta property="og:updated_time" content="2019-10-13T10:13:49.795Z">
+<meta property="og:image" content="http://media.kosho.tech/blog/20191013/canal-service.png">
+<meta property="og:image" content="http://media.kosho.tech/blog/20191013/canal-consistent-hashing2.png">
+<meta property="og:updated_time" content="2019-10-24T15:53:08.223Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Canal的嵌入式使用与负载均衡改造">
 <meta name="twitter:description" content="Canal是阿里巴巴的开源项目，基于MySQL Binlog解析，提供增量数据订阅和消费，是一个广泛使用的数据同步组件。我们的业务也大量使用了Canal，用于ES同步，业务消息通知等场景，分享一下自己的实践。">
-<meta name="twitter:image" content="http://pypc1ne42.bkt.clouddn.com/blog/20191013/canal-service.png">
+<meta name="twitter:image" content="http://media.kosho.tech/blog/20191013/canal-service.png">
 
 
 
@@ -412,7 +412,7 @@
 <h3 id="运维，配置管理"><a href="#运维，配置管理" class="headerlink" title="运维，配置管理"></a>运维，配置管理</h3><p>项目环境比较多，每套环境多个租户（独立数据库），时常会新增租户和变更数据库。运维能力比较弱，经常配置不好Canal。我们的数据库配置是作为元数据管理的，就想把Canal集成到系统里，作为一个微服务运行。自动新增和启停instance。</p>
 <h3 id="缺少负载均衡机制"><a href="#缺少负载均衡机制" class="headerlink" title="缺少负载均衡机制"></a>缺少负载均衡机制</h3><p>Canal自身的HA机制基于zk节点抢占实现，没有实现负载均衡。同一套集群运行的instance多了，负载不均的问题就会比较明显，instance很容易都运行在一个节点，造成OOM等问题。<br>如果是直接部署的方式，server端可以手动配置分割为多个小集群，client端不行。既然已经用了嵌入式启动的方式，就只能自行实现负载均衡了。</p>
 <h3 id="性能"><a href="#性能" class="headerlink" title="性能"></a>性能</h3><p>使用CanalConnector需要多一次网络传输以及序列化，数据量比较大的场景会有性能上的问题，Embedded API就可以绕过这一步，带来比较大的性能提升。</p>
-<h2 id="扩展后的组件设计"><a href="#扩展后的组件设计" class="headerlink" title="扩展后的组件设计"></a>扩展后的组件设计</h2><p><img src="http://pypc1ne42.bkt.clouddn.com/blog/20191013/canal-service.png" alt="Canal service"></p>
+<h2 id="扩展后的组件设计"><a href="#扩展后的组件设计" class="headerlink" title="扩展后的组件设计"></a>扩展后的组件设计</h2><p><img src="http://media.kosho.tech/blog/20191013/canal-service.png" alt="Canal service"></p>
 <ul>
 <li>Channel：在Instance上一层的数据同步通道，管理instance和consumer（poller）</li>
 <li>ChannelPipeline：数据同步流水线</li>
@@ -431,7 +431,7 @@
 <li>有节点上下线的情况下，可以让实例的变动尽可能的小</li>
 </ol>
 <p>注意使用带有虚拟节点的一致性hash，让instance分布更均衡些。</p>
-<p>直接上图，有Canal1，Canal2，Canal3三个Canal节点（每个节点有三个虚拟节点），10个instance按照一致性hash的方式负载到这三个节点上：<br><img src="http://pypc1ne42.bkt.clouddn.com/blog/20191013/canal-consistent-hashing2.png" alt="Canal consistent hashing"></p>
+<p>直接上图，有Canal1，Canal2，Canal3三个Canal节点（每个节点有三个虚拟节点），10个instance按照一致性hash的方式负载到这三个节点上：<br><img src="http://media.kosho.tech/blog/20191013/canal-consistent-hashing2.png" alt="Canal consistent hashing"></p>
 <p>负载均衡状态：</p>
 <ul>
 <li>Canal1：instance7，instance8，instance9</li>
