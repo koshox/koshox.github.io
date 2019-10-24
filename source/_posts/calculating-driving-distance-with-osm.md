@@ -20,10 +20,10 @@ OSM可以在http://download.geofabrik.de/ 下载各国家地图包，地图数�
 
 ### 地图数据生成
 下载osm2po以后修改demo.sh或demo.bat的路径为你下载的pbf地图文件路径：
-![生成地图数据](http://pypc1ne42.bkt.clouddn.com/blog/20191004/WclYQKdEYbIY.jpg)
+![生成地图数据](http://media.kosho.tech/blog/20191004/WclYQKdEYbIY.jpg)
 
 执行后会在目录下生成gph地图数据文件，并启动一个Http服务器http://localhost:8888/Osm2poService ，打开就可以看见地图界面了：
-![中国地图](http://pypc1ne42.bkt.clouddn.com/blog/20191004/gabifDrX01Lk.jpg?imageslim)
+![中国地图](http://media.kosho.tech/blog/20191004/gabifDrX01Lk.jpg?imageslim)
 
 
 
@@ -31,17 +31,17 @@ OSM可以在http://download.geofabrik.de/ 下载各国家地图包，地图数�
 
 随便寻个路，效果还可以，国内路线看起来和高德地图差不多。
 #### osm2po：
-![osm2po寻路](http://pypc1ne42.bkt.clouddn.com/blog/20191004/4K0NMXoIU0w7.jpg?imageslim)
+![osm2po寻路](http://media.kosho.tech/blog/20191004/4K0NMXoIU0w7.jpg?imageslim)
 
 #### 高德地图：
-![高德地图寻路](http://pypc1ne42.bkt.clouddn.com/blog/20191004/rms2VCSWsPaS.jpg?imageslim)
+![高德地图寻路](http://media.kosho.tech/blog/20191004/rms2VCSWsPaS.jpg?imageslim)
 
 
 
 ### 计算多点间路网距离（Java）
 
 Http访问方式只提供了这么些参数可以使用，不是很完善，没有distance的选项，http接口效率也不高，最好还是通过Java API来计算
-![API](http://pypc1ne42.bkt.clouddn.com/blog/20191004/sNodupwxHXcd.jpg?imageslim)
+![API](http://media.kosho.tech/blog/20191004/sNodupwxHXcd.jpg?imageslim)
 
 计算两点间距离可以直接用官网示例的DefaultRouter，很简单。
 

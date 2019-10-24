@@ -26,7 +26,7 @@ Canal自身的HA机制基于zk节点抢占实现，没有实现负载均衡。�
 使用CanalConnector需要多一次网络传输以及序列化，数据量比较大的场景会有性能上的问题，Embedded API就可以绕过这一步，带来比较大的性能提升。
 
 ## 扩展后的组件设计
-![Canal service](http://pypc1ne42.bkt.clouddn.com/blog/20191013/canal-service.png)
+![Canal service](http://media.kosho.tech/blog/20191013/canal-service.png)
 
 - Channel：在Instance上一层的数据同步通道，管理instance和consumer（poller）
 - ChannelPipeline：数据同步流水线
@@ -59,7 +59,7 @@ Canal默认的方式是扩展spring文件的方式来启动，用SpringCanalInst
 注意使用带有虚拟节点的一致性hash，让instance分布更均衡些。
 
 直接上图，有Canal1，Canal2，Canal3三个Canal节点（每个节点有三个虚拟节点），10个instance按照一致性hash的方式负载到这三个节点上：
-![Canal consistent hashing](http://pypc1ne42.bkt.clouddn.com/blog/20191013/canal-consistent-hashing2.png)
+![Canal consistent hashing](http://media.kosho.tech/blog/20191013/canal-consistent-hashing2.png)
 
 负载均衡状态：
 - Canal1：instance7，instance8，instance9
