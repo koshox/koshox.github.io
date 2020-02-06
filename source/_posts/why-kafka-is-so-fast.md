@@ -5,7 +5,6 @@ tags:
 - Kafka
 - 中间件
 categories:
-- Kafka
 - 中间件
 ---
 

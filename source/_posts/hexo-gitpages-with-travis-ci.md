@@ -4,7 +4,7 @@ date: 2019-09-30 23:06:20
 tags: 
 - 博客搭建
 categories:
-- 博客搭建
+- Web
 ---
 
 现有的博客网站用着都不太满意，思来想去还是决定自己搭一个。按照惯例，第一篇文章记录下整个博客的搭建过程。博客基于[Hexo](https://hexo.io/zh-cn/docs/)和[Github Pages](https://pages.github.com)构建，并使用[Travis CI](https://www.travis-ci.org)持续集成，自动发布。
