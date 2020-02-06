@@ -15,5 +15,8 @@
   </url>  <url>
     <loc>http://kosho.tech/2020/02/05/tenant-isolation-of-middleware-and-database/</loc>
     <lastmod>2020-02-06</lastmod>
+  </url>  <url>
+    <loc>http://kosho.tech/2020/02/06/why-kafka-is-so-fast/</loc>
+    <lastmod>2020-02-06</lastmod>
   </url>
 </urlset>

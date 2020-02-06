@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="博客搭建,">
+  <meta name="keywords" content="中间件,Kafka,">
 
 
 
@@ -79,18 +79,26 @@
 
 
 
-<meta name="description" content="现有的博客网站用着都不太满意，思来想去还是决定自己搭一个。按照惯例，第一篇文章记录下整个博客的搭建过程。博客基于Hexo和Github Pages构建，并使用Travis CI持续集成，自动发布。">
-<meta name="keywords" content="博客搭建">
+<meta name="description" content="Kafka是最热门的消息中间件之一，Benchmark中领先一众对手。道理我都懂，但是Kafka为什么这么快？">
+<meta name="keywords" content="中间件,Kafka">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Hexo和GitPages搭建博客并自动发布">
-<meta property="og:url" content="http://kosho.tech/2019/09/30/hexo-gitpages-with-travis-ci/index.html">
+<meta property="og:title" content="why kafka is so fast">
+<meta property="og:url" content="http://kosho.tech/2020/02/06/why-kafka-is-so-fast/index.html">
 <meta property="og:site_name" content="Kosho&#39;s blog">
-<meta property="og:description" content="现有的博客网站用着都不太满意，思来想去还是决定自己搭一个。按照惯例，第一篇文章记录下整个博客的搭建过程。博客基于Hexo和Github Pages构建，并使用Travis CI持续集成，自动发布。">
+<meta property="og:description" content="Kafka是最热门的消息中间件之一，Benchmark中领先一众对手。道理我都懂，但是Kafka为什么这么快？">
 <meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://media.kosho.tech/blog/20200206/kafka-thread.png">
+<meta property="og:image" content="http://media.kosho.tech/blog/20200206/kafka-log-file.png">
+<meta property="og:image" content="http://media.kosho.tech/blog/20200206/kafka-index.png">
+<meta property="og:image" content="http://media.kosho.tech/blog/20200206/page-cache.png">
+<meta property="og:image" content="http://media.kosho.tech/blog/20200206/zero-copy1.png">
+<meta property="og:image" content="http://media.kosho.tech/blog/20200206/zero-copy2.png">
+<meta property="og:image" content="http://media.kosho.tech/blog/20200206/disk-seq-access.webp.jpg">
 <meta property="og:updated_time" content="2020-02-06T18:16:56.681Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Hexo和GitPages搭建博客并自动发布">
-<meta name="twitter:description" content="现有的博客网站用着都不太满意，思来想去还是决定自己搭一个。按照惯例，第一篇文章记录下整个博客的搭建过程。博客基于Hexo和Github Pages构建，并使用Travis CI持续集成，自动发布。">
+<meta name="twitter:title" content="why kafka is so fast">
+<meta name="twitter:description" content="Kafka是最热门的消息中间件之一，Benchmark中领先一众对手。道理我都懂，但是Kafka为什么这么快？">
+<meta name="twitter:image" content="http://media.kosho.tech/blog/20200206/kafka-thread.png">
 
 
 
@@ -120,13 +128,13 @@
 
 
 
-  <link rel="canonical" href="http://kosho.tech/2019/09/30/hexo-gitpages-with-travis-ci/">
+  <link rel="canonical" href="http://kosho.tech/2020/02/06/why-kafka-is-so-fast/">
 
 
 
 
 
-  <title>Hexo和GitPages搭建博客并自动发布 | Kosho's blog</title>
+  <title>why kafka is so fast | Kosho's blog</title>
   
 
 
@@ -273,7 +281,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://kosho.tech/2019/09/30/hexo-gitpages-with-travis-ci/">
+    <link itemprop="mainEntityOfPage" href="http://kosho.tech/2020/02/06/why-kafka-is-so-fast/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Kosho">
@@ -290,7 +298,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">Hexo和GitPages搭建博客并自动发布</h1>
+          <h1 class="post-title" itemprop="name headline">why kafka is so fast</h1>
         
 
         <div class="post-meta">
@@ -302,8 +310,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-09-30T23:06:20+08:00">
-                2019-09-30
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-02-06T23:00:42+08:00">
+                2020-02-06
               </time>
             
 
@@ -325,8 +333,19 @@
               
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/博客搭建/" itemprop="url" rel="index">
-                    <span itemprop="name">博客搭建</span>
+                  <a href="/categories/Kafka/" itemprop="url" rel="index">
+                    <span itemprop="name">Kafka</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Kafka/中间件/" itemprop="url" rel="index">
+                    <span itemprop="name">中间件</span>
                   </a>
                 </span>
 
@@ -343,8 +362,8 @@
                 <span class="post-meta-item-icon">
                   <i class="fa fa-comment-o"></i>
                 </span>
-                <a href="/2019/09/30/hexo-gitpages-with-travis-ci/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count gitment-comments-count" data-xid="/2019/09/30/hexo-gitpages-with-travis-ci/" itemprop="commentsCount"></span>
+                <a href="/2020/02/06/why-kafka-is-so-fast/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count gitment-comments-count" data-xid="/2020/02/06/why-kafka-is-so-fast/" itemprop="commentsCount"></span>
                 </a>
               </span>
             
@@ -366,7 +385,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  719
+                  1.4k
                 </span>
               
 
@@ -391,71 +410,51 @@
       
 
       
-        <p>现有的博客网站用着都不太满意，思来想去还是决定自己搭一个。按照惯例，第一篇文章记录下整个博客的搭建过程。博客基于<a href="https://hexo.io/zh-cn/docs/" target="_blank" rel="noopener">Hexo</a>和<a href="https://pages.github.com" target="_blank" rel="noopener">Github Pages</a>构建，并使用<a href="https://www.travis-ci.org" target="_blank" rel="noopener">Travis CI</a>持续集成，自动发布。</p>
+        <p><a href="http://kafka.apache.org" target="_blank" rel="noopener">Kafka</a>是最热门的消息中间件之一，Benchmark中领先一众对手。道理我都懂，但是Kafka为什么这么快？</p>
 <a id="more"></a>
 
-<h2 id="搭建过程"><a href="#搭建过程" class="headerlink" title="搭建过程"></a>搭建过程</h2><h3 id="创建Github-Pages"><a href="#创建Github-Pages" class="headerlink" title="创建Github Pages"></a>创建Github Pages</h3><ol>
-<li>注册并登陆你的Github</li>
-<li>创建一个仓库，名为 username.github.io ，username 就是你的 Github 用户名，提交后就可以通过<a href="http://username.github.io/" target="_blank" rel="noopener">http://username.github.io/</a> 访问了</li>
-</ol>
-<h3 id="环境配置"><a href="#环境配置" class="headerlink" title="环境配置"></a>环境配置</h3><h4 id="安装Node-js和Git"><a href="#安装Node-js和Git" class="headerlink" title="安装Node.js和Git"></a>安装Node.js和Git</h4><p>程序员基本都会用到的模块，安装可参考<a href="https://hexo.io/zh-cn/docs/" target="_blank" rel="noopener">Hexo文档</a>。</p>
-<h4 id="安装Hexo"><a href="#安装Hexo" class="headerlink" title="安装Hexo"></a>安装Hexo</h4><p>cmd/gitbash执行如下命令</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">npm install hexo-cli -g # 安装hexo</span><br><span class="line">hexo init blog # 初始化blog文件夹</span><br><span class="line">cd blog</span><br><span class="line">npm install # 安装博客所需npm包</span><br><span class="line">hexo g # 生成静态文件</span><br><span class="line">hexo s # 启动本地web服务，可在http://localhost:4000/ 预览博客</span><br></pre></td></tr></table></figure>
-
-<h3 id="域名绑定"><a href="#域名绑定" class="headerlink" title="域名绑定"></a>域名绑定</h3><h4 id="购买域名"><a href="#购买域名" class="headerlink" title="购买域名"></a>购买域名</h4><p>域名绑定第一步当然是先去买一个域名，不然拿头绑定。有了域名就可以用自己的域名，比如说<a href="http://www.kosho.tech" target="_blank" rel="noopener">www.kosho.tech</a> 访问，比<a href="http://username.github.io/" target="_blank" rel="noopener">http://username.github.io/</a> 舒服多了。</p>
-<p>那么，在哪里才能买得到呢？</p>
-<p>其实阿里云就不错，价格便宜，配置方便，自带DNS解析。</p>
-<h4 id="DNS解析"><a href="#DNS解析" class="headerlink" title="DNS解析"></a>DNS解析</h4><p>买完在域名解析里增加两条记录：</p>
-<table>
-<thead>
-<tr>
-<th align="center">主机记录</th>
-<th align="center">记录类型</th>
-<th align="center">线路类型</th>
-<th align="center">记录值</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="center">www</td>
-<td align="center">A</td>
-<td align="center">默认</td>
-<td align="center">185.199.110.153</td>
-</tr>
-<tr>
-<td align="center">@</td>
-<td align="center">CNAME</td>
-<td align="center">默认</td>
-<td align="center">koshox.github.io</td>
-</tr>
-</tbody></table>
-<p>然后记得在hexo博客的source文件夹下加一个CNAME文件，内容是你的域名：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kosho.tech</span><br></pre></td></tr></table></figure>
-
-<p>这样访问你的域名时，浏览器会自动跳转到Github Pages。</p>
-<h3 id="自动部署"><a href="#自动部署" class="headerlink" title="自动部署"></a>自动部署</h3><p>一顿操作以后，怎么把生成的博客内容部署上去呢？很多人会使用<a href="https://github.com/hexojs/hexo-deployer-git" target="_blank" rel="noopener">hexo-deployer-git</a>插件部署。</p>
-<p>在站点配置文件 _config.yml 中修改设置：</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">deploy:</span>  </span><br><span class="line">	<span class="attr">type:</span> <span class="string">git</span></span><br><span class="line">	<span class="attr">repo:</span> <span class="string">&lt;repository</span> <span class="string">url&gt;</span></span><br><span class="line">	<span class="attr">branch:</span> <span class="string">[branch]</span></span><br></pre></td></tr></table></figure>
-
-<p>然后执行</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo d</span><br></pre></td></tr></table></figure>
-
-<p>但是这样还是稍微有点麻烦，每次得输入用户名密码。</p>
-<p>官方推荐的方式是利用Travis CI持续集成：<a href="https://hexo.io/zh-cn/docs/github-pages" target="_blank" rel="noopener">https://hexo.io/zh-cn/docs/github-pages</a><br>注意不配置分支的话，默认会把部署分支设置为gh-pages，可以像我一样，把源码分支设置为hexo，部署分支设置为master。</p>
-<p>travis.yml：</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">sudo:</span> <span class="literal">false</span></span><br><span class="line"><span class="attr">language:</span> <span class="string">node_js</span></span><br><span class="line"><span class="attr">node_js:</span></span><br><span class="line"><span class="bullet">  -</span> <span class="number">10</span> <span class="comment"># use nodejs v10 LTS</span></span><br><span class="line"><span class="attr">cache:</span> <span class="string">npm</span></span><br><span class="line"><span class="attr">branches:</span></span><br><span class="line"><span class="attr">  only:</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">hexo</span></span><br><span class="line"><span class="attr">script:</span></span><br><span class="line"><span class="bullet">  -</span> <span class="string">hexo</span> <span class="string">generate</span> <span class="comment"># generate static files</span></span><br><span class="line"><span class="attr">deploy:</span></span><br><span class="line"><span class="attr">  provider:</span> <span class="string">pages</span></span><br><span class="line"><span class="attr">  skip-cleanup:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">  github-token:</span> <span class="string">$GH_TOKEN</span></span><br><span class="line"><span class="attr">  keep-history:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">  target-branch:</span> <span class="string">master</span></span><br><span class="line"><span class="attr">  on:</span></span><br><span class="line"><span class="attr">    branch:</span> <span class="string">hexo</span></span><br><span class="line"><span class="attr">  local-dir:</span> <span class="string">public</span></span><br></pre></td></tr></table></figure>
-
-<p>这样向hexo分支提交文章，CI会帮你自动部署到master上，顺滑就完事了。</p>
-<h3 id="继续折腾"><a href="#继续折腾" class="headerlink" title="继续折腾"></a>继续折腾</h3><p>搭建完了还有一堆东西需要折腾，包括但不限于：</p>
+<h2 id="什么是Kafka？"><a href="#什么是Kafka？" class="headerlink" title="什么是Kafka？"></a>什么是Kafka？</h2><p>说正事之前，先看下什么是Kafka？官方对它的定义是<a href="http://kafka.apache.org/intro" target="_blank" rel="noopener">A distributed streaming platform</a>，即分布式流处理平台，一般用于系统间数据流管道和实时流处理。</p>
+<p>它有这么三个比较关键的能力：</p>
 <ol>
-<li>折腾主题</li>
-<li>增加评论</li>
-<li>添加搜索功能</li>
-<li>阅读次数统计</li>
-<li>添加社交链接</li>
-<li>提交百度和谷歌收录</li>
+<li>发布订阅，可以当做消息队列用</li>
+<li>记录的容错持久化</li>
+<li>流处理</li>
 </ol>
-<p>等等…</p>
-<p>好在Hexo和Next主题默认给集成了很多功能，网上也有大把的文章，比自己从头开始方便了很多。</p>
+<p>我觉得还有第四个，就是他的高性能。</p>
+<h2 id="Kafka线程模型"><a href="#Kafka线程模型" class="headerlink" title="Kafka线程模型"></a>Kafka线程模型</h2><p>1(Acceptor) + N(Processor) + M(KafkaRequestHandler)，在Netty，Tomcat，Nginx上面都能看见类似的设计</p>
+<p>N = num.networker.threads</p>
+<p>M = num.io.threads</p>
+<p>一个EndPoint(网卡)对于一个Acceptor，一般来说就一个</p>
+<p><img src="http://media.kosho.tech/blog/20200206/kafka-thread.png" alt="Kafka thread"></p>
+<h2 id="kafka存储模型"><a href="#kafka存储模型" class="headerlink" title="kafka存储模型"></a>kafka存储模型</h2><h3 id="日志文件"><a href="#日志文件" class="headerlink" title="日志文件"></a>日志文件</h3><p>Kafka节点上，一个Partition对应一个磁盘目录，命名为<topic_name>_<partition_id>，分为多个LogSegment，一个LogSegment，一个LogSegment对应磁盘上一个日志文件和一个索引文件，日志文件命名规则为[baseOffset].log，baseOffset是日志文件中第一条消息的offset。</partition_id></topic_name></p>
+<p>写入时数据直接append到文件末尾，所以不管文件多大，写入总是O(1)的时间复杂度。</p>
+<p><img src="http://media.kosho.tech/blog/20200206/kafka-log-file.png" alt="Kafka log"></p>
+<h3 id="索引文件"><a href="#索引文件" class="headerlink" title="索引文件"></a>索引文件</h3><p>索引是分段和稀疏索引的方式，二分查找定位日志位点，返回低位点。和日志不同，索引文件因为比较小，用mmap的方式操作，速度很快。</p>
+<p><img src="http://media.kosho.tech/blog/20200206/kafka-index.png" alt="Kafka index"></p>
+<h2 id="Kafka高性能原理"><a href="#Kafka高性能原理" class="headerlink" title="Kafka高性能原理"></a>Kafka高性能原理</h2><p>说了半天终于到最核心的地方了，也就是Kafka为什么这么快！</p>
+<h3 id="页缓存"><a href="#页缓存" class="headerlink" title="页缓存"></a>页缓存</h3><p>Kafka并不太依赖JVM内存大小，而是主要利用Page Cache，如果使用应用层缓存（JVM堆内存），会增加GC负担，增加停顿时间和延迟，创建对象的开销也会比较高。</p>
+<p>读取操作可以直接在Page Cache上进行，如果消费和生产速度相当，甚至不需要通过物理磁盘直接交换数据，这是Kafka高吞吐量的一个重要原因。</p>
+<p>这么做还有一个优势，如果Kafka重启，JVM内的Cache会失效，Page Cache依然可用。</p>
+<p><img src="http://media.kosho.tech/blog/20200206/page-cache.png" alt="Page cache"></p>
+<h3 id="零拷贝"><a href="#零拷贝" class="headerlink" title="零拷贝"></a>零拷贝</h3><p>Kafka中存在大量的网络数据持久化到磁盘（Producer到Broker）和磁盘文件通过网络发送（Broker到Consumer）的过程。这一过程的性能直接影响Kafka的整体吞吐量。</p>
+<h4 id="传统模式下的四次拷贝与四次上下文切换"><a href="#传统模式下的四次拷贝与四次上下文切换" class="headerlink" title="传统模式下的四次拷贝与四次上下文切换"></a>传统模式下的四次拷贝与四次上下文切换</h4><p>以将磁盘文件通过网络发送为例。传统模式下，一般使用如下伪代码所示的方法先将文件数据读入内存，然后通过Socket将内存中的数据发送出去。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">buffer = File.read</span><br><span class="line">Socket.send(buffer)</span><br></pre></td></tr></table></figure>
+
+<p>这一过程实际上发生了四次数据拷贝。首先通过系统调用将文件数据读入到内核态Buffer（DMA拷贝），然后应用程序将内存态Buffer数据读入到用户态Buffer（CPU拷贝），接着用户程序通过Socket发送数据时将用户态Buffer数据拷贝到内核态Buffer（CPU拷贝），最后通过DMA拷贝将数据拷贝到NIC Buffer。同时，还伴随着四次上下文切换。</p>
+<p><a href="http://www.jasongj.com/img/kafka/KafkaColumn6/BIO.png" target="_blank" rel="noopener"><img src="http://media.kosho.tech/blog/20200206/zero-copy1.png" alt="四次拷贝 四次上下文切换"></a></p>
+<h4 id="sendfile和transferTo实现零拷贝"><a href="#sendfile和transferTo实现零拷贝" class="headerlink" title="sendfile和transferTo实现零拷贝"></a>sendfile和transferTo实现零拷贝</h4><p>Linux 2.4+内核通过<code>sendfile</code>系统调用，提供了零拷贝。数据通过DMA拷贝到内核态Buffer后，直接通过DMA拷贝到NIC Buffer，无需CPU拷贝。这也是零拷贝这一说法的来源。除了减少数据拷贝外，因为整个读文件-网络发送由一个<code>sendfile</code>调用完成，整个过程只有两次上下文切换，因此大大提高了性能，结合。</p>
+<p><a href="http://www.jasongj.com/img/kafka/KafkaColumn6/NIO.png" target="_blank" rel="noopener"><img src="http://media.kosho.tech/blog/20200206/zero-copy2.png" alt="零拷贝 两次上下文切换"></a></p>
+<p>具体实现上，Kafka的数据传输通过TransportLayer来完成，其子类<code>PlaintextTransportLayer</code>通过<a href="http://www.jasongj.com/java/nio_reactor/" target="_blank" rel="noopener">Java NIO</a>的FileChannel的<code>transferTo</code>和<code>transferFrom</code>方法实现零拷贝。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Overridepublic</span> <span class="function"><span class="keyword">long</span> <span class="title">transferFrom</span><span class="params">(FileChannel fileChannel, <span class="keyword">long</span> position, <span class="keyword">long</span> count)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> fileChannel.transferTo(position, count, socketChannel);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>注：</strong> <code>transferTo</code>和<code>transferFrom</code>并不保证一定能使用零拷贝。实际上是否能使用零拷贝与操作系统相关，如果操作系统提供<code>sendfile</code>这样的零拷贝系统调用，则这两个方法会通过这样的系统调用充分利用零拷贝的优势，否则并不能通过这两个方法本身实现零拷贝。</p>
+<h3 id="磁盘顺序写入"><a href="#磁盘顺序写入" class="headerlink" title="磁盘顺序写入"></a>磁盘顺序写入</h3><p>即使是普通的机械磁盘，顺序访问速率也接近了内存的随机访问速率。</p>
+<p>Kafka的每条消息都是append的，不会从中间写入和删除消息，保证了磁盘的顺序访问。</p>
+<p>即使是顺序读写，过于频繁的大量小IO操作一样会造成磁盘的瓶颈，此时又变成了随机读写。Kafka的策略是把消息集合在一起，批量发送，尽可能减少对磁盘的访问。所以，Kafka的Topic和Partition数量不宜过多，可以看阿里云的这个测试结果，超过10000w以后Kafka性能会急剧下降。</p>
+<p><img src="http://media.kosho.tech/blog/20200206/disk-seq-access.webp.jpg" alt="Disk sequence access"></p>
+<h3 id="全异步"><a href="#全异步" class="headerlink" title="全异步"></a>全异步</h3><p>Kafka基本上是没有阻塞操作的，调用发送方法会立即返回，等待buffer满了以后交给轮询线程，发送和接收消息，复制数据也是都是通过NetworkClient封装的poll方式。</p>
+<h3 id="批量操作"><a href="#批量操作" class="headerlink" title="批量操作"></a>批量操作</h3><p>结合磁盘顺序写入，批量无疑是非常有必要（如果用的时候每发送一条消息都调用future.get等待，性能至少下降2个数量级）。写入的时候放到RecordAccumulator进行聚合，批量压缩，还有批量刷盘等…</p>
+<h3 id="精妙的组件设计"><a href="#精妙的组件设计" class="headerlink" title="精妙的组件设计"></a>精妙的组件设计</h3><p>Kafka里有不少精妙的设计，比如说DelayedOperationPurgatory和多层TimingWheel，保证了延迟任务的高性能，Quartz和Netty也有类似的东西。</p>
 
       
     </div>
@@ -473,7 +472,9 @@
       
         <div class="post-tags">
           
-            <a href="/tags/博客搭建/" rel="tag"># 博客搭建</a>
+            <a href="/tags/中间件/" rel="tag"># 中间件</a>
+          
+            <a href="/tags/Kafka/" rel="tag"># Kafka</a>
           
         </div>
       
@@ -486,15 +487,15 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
+              <a href="/2020/02/05/tenant-isolation-of-middleware-and-database/" rel="next" title="中间件、数据库的多租户设计">
+                <i class="fa fa-chevron-left"></i> 中间件、数据库的多租户设计
+              </a>
+            
           </div>
 
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2019/10/02/booklist/" rel="prev" title="Kosho的计算机书单">
-                Kosho的计算机书单 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -663,7 +664,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#搭建过程"><span class="nav-number">1.</span> <span class="nav-text">搭建过程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#创建Github-Pages"><span class="nav-number">1.1.</span> <span class="nav-text">创建Github Pages</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#环境配置"><span class="nav-number">1.2.</span> <span class="nav-text">环境配置</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#安装Node-js和Git"><span class="nav-number">1.2.1.</span> <span class="nav-text">安装Node.js和Git</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#安装Hexo"><span class="nav-number">1.2.2.</span> <span class="nav-text">安装Hexo</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#域名绑定"><span class="nav-number">1.3.</span> <span class="nav-text">域名绑定</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#购买域名"><span class="nav-number">1.3.1.</span> <span class="nav-text">购买域名</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#DNS解析"><span class="nav-number">1.3.2.</span> <span class="nav-text">DNS解析</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#自动部署"><span class="nav-number">1.4.</span> <span class="nav-text">自动部署</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#继续折腾"><span class="nav-number">1.5.</span> <span class="nav-text">继续折腾</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#什么是Kafka？"><span class="nav-number">1.</span> <span class="nav-text">什么是Kafka？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Kafka线程模型"><span class="nav-number">2.</span> <span class="nav-text">Kafka线程模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#kafka存储模型"><span class="nav-number">3.</span> <span class="nav-text">kafka存储模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#日志文件"><span class="nav-number">3.1.</span> <span class="nav-text">日志文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#索引文件"><span class="nav-number">3.2.</span> <span class="nav-text">索引文件</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Kafka高性能原理"><span class="nav-number">4.</span> <span class="nav-text">Kafka高性能原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#页缓存"><span class="nav-number">4.1.</span> <span class="nav-text">页缓存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#零拷贝"><span class="nav-number">4.2.</span> <span class="nav-text">零拷贝</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#传统模式下的四次拷贝与四次上下文切换"><span class="nav-number">4.2.1.</span> <span class="nav-text">传统模式下的四次拷贝与四次上下文切换</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#sendfile和transferTo实现零拷贝"><span class="nav-number">4.2.2.</span> <span class="nav-text">sendfile和transferTo实现零拷贝</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#磁盘顺序写入"><span class="nav-number">4.3.</span> <span class="nav-text">磁盘顺序写入</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#全异步"><span class="nav-number">4.4.</span> <span class="nav-text">全异步</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#批量操作"><span class="nav-number">4.5.</span> <span class="nav-text">批量操作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#精妙的组件设计"><span class="nav-number">4.6.</span> <span class="nav-text">精妙的组件设计</span></a></li></ol></li></ol></div>
             
 
           </div>
