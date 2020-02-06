@@ -94,7 +94,7 @@
 <meta property="og:image" content="http://media.kosho.tech/blog/20200206/zero-copy1.png">
 <meta property="og:image" content="http://media.kosho.tech/blog/20200206/zero-copy2.png">
 <meta property="og:image" content="http://media.kosho.tech/blog/20200206/disk-seq-access.webp.jpg">
-<meta property="og:updated_time" content="2020-02-06T18:46:13.836Z">
+<meta property="og:updated_time" content="2020-02-06T19:04:00.693Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Kafka高性能原理">
 <meta name="twitter:description" content="Kafka是最热门的消息中间件之一，Benchmark中领先一众对手。道理我都懂，但是Kafka为什么这么快？">
@@ -374,7 +374,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  1.4k
+                  1.5k
                 </span>
               
 
@@ -439,7 +439,8 @@
 <p><strong>注：</strong> <code>transferTo</code>和<code>transferFrom</code>并不保证一定能使用零拷贝。实际上是否能使用零拷贝与操作系统相关，如果操作系统提供<code>sendfile</code>这样的零拷贝系统调用，则这两个方法会通过这样的系统调用充分利用零拷贝的优势，否则并不能通过这两个方法本身实现零拷贝。</p>
 <h3 id="磁盘顺序写入"><a href="#磁盘顺序写入" class="headerlink" title="磁盘顺序写入"></a>磁盘顺序写入</h3><p>即使是普通的机械磁盘，顺序访问速率也接近了内存的随机访问速率。</p>
 <p>Kafka的每条消息都是append的，不会从中间写入和删除消息，保证了磁盘的顺序访问。</p>
-<p>即使是顺序读写，过于频繁的大量小IO操作一样会造成磁盘的瓶颈，此时又变成了随机读写。Kafka的策略是把消息集合在一起，批量发送，尽可能减少对磁盘的访问。所以，Kafka的Topic和Partition数量不宜过多，可以看阿里云的这个测试结果，超过10000w以后Kafka性能会急剧下降。</p>
+<p>即使是顺序读写，过于频繁的大量小IO操作一样会造成磁盘的瓶颈，此时又变成了随机读写。Kafka的策略是把消息集合在一起，批量发送，尽可能减少对磁盘的访问。所以，Kafka的Topic和Partition数量不宜过多，可以看阿里云中间件团队的这篇文章：<a href="http://jm.taobao.org/2016/04/20/kafka-vs-rocketmq-3/" target="_blank" rel="noopener">Kafka vs RocketMQ——多Topic对性能稳定性的影响</a>，超过64个Topic/Partition以后，Kafka性能会急剧下降。</p>
+<p>RocketMQ存储模型与Kafka有些差异，RocketMQ会把所有的数据存放在相同的日志文件，所以单机可以支持非常多的队列。</p>
 <p><img src="http://media.kosho.tech/blog/20200206/disk-seq-access.webp.jpg" alt="Disk sequence access"></p>
 <h3 id="全异步"><a href="#全异步" class="headerlink" title="全异步"></a>全异步</h3><p>Kafka基本上是没有阻塞操作的，调用发送方法会立即返回，等待buffer满了以后交给轮询线程，发送和接收消息，复制数据也是都是通过NetworkClient封装的poll方式。</p>
 <h3 id="批量操作"><a href="#批量操作" class="headerlink" title="批量操作"></a>批量操作</h3><p>结合磁盘顺序写入，批量无疑是非常有必要（如果用的时候每发送一条消息都调用future.get等待，性能至少下降2个数量级）。写入的时候放到RecordAccumulator进行聚合，批量压缩，还有批量刷盘等…</p>
