@@ -82,7 +82,7 @@
 <meta name="description" content="Kafka是最热门的消息中间件之一，Benchmark中领先一众对手。道理我都懂，但是Kafka为什么这么快？">
 <meta name="keywords" content="中间件,Kafka">
 <meta property="og:type" content="article">
-<meta property="og:title" content="why kafka is so fast">
+<meta property="og:title" content="Kafka高性能原理">
 <meta property="og:url" content="http://kosho.tech/2020/02/06/why-kafka-is-so-fast/index.html">
 <meta property="og:site_name" content="Kosho&#39;s blog">
 <meta property="og:description" content="Kafka是最热门的消息中间件之一，Benchmark中领先一众对手。道理我都懂，但是Kafka为什么这么快？">
@@ -94,9 +94,9 @@
 <meta property="og:image" content="http://media.kosho.tech/blog/20200206/zero-copy1.png">
 <meta property="og:image" content="http://media.kosho.tech/blog/20200206/zero-copy2.png">
 <meta property="og:image" content="http://media.kosho.tech/blog/20200206/disk-seq-access.webp.jpg">
-<meta property="og:updated_time" content="2020-02-06T18:16:56.681Z">
+<meta property="og:updated_time" content="2020-02-06T18:22:55.265Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="why kafka is so fast">
+<meta name="twitter:title" content="Kafka高性能原理">
 <meta name="twitter:description" content="Kafka是最热门的消息中间件之一，Benchmark中领先一众对手。道理我都懂，但是Kafka为什么这么快？">
 <meta name="twitter:image" content="http://media.kosho.tech/blog/20200206/kafka-thread.png">
 
@@ -134,7 +134,7 @@
 
 
 
-  <title>why kafka is so fast | Kosho's blog</title>
+  <title>Kafka高性能原理 | Kosho's blog</title>
   
 
 
@@ -298,7 +298,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">why kafka is so fast</h1>
+          <h1 class="post-title" itemprop="name headline">Kafka高性能原理</h1>
         
 
         <div class="post-meta">
@@ -442,7 +442,7 @@
 
 <p>这一过程实际上发生了四次数据拷贝。首先通过系统调用将文件数据读入到内核态Buffer（DMA拷贝），然后应用程序将内存态Buffer数据读入到用户态Buffer（CPU拷贝），接着用户程序通过Socket发送数据时将用户态Buffer数据拷贝到内核态Buffer（CPU拷贝），最后通过DMA拷贝将数据拷贝到NIC Buffer。同时，还伴随着四次上下文切换。</p>
 <p><a href="http://www.jasongj.com/img/kafka/KafkaColumn6/BIO.png" target="_blank" rel="noopener"><img src="http://media.kosho.tech/blog/20200206/zero-copy1.png" alt="四次拷贝 四次上下文切换"></a></p>
-<h4 id="sendfile和transferTo实现零拷贝"><a href="#sendfile和transferTo实现零拷贝" class="headerlink" title="sendfile和transferTo实现零拷贝"></a>sendfile和transferTo实现零拷贝</h4><p>Linux 2.4+内核通过<code>sendfile</code>系统调用，提供了零拷贝。数据通过DMA拷贝到内核态Buffer后，直接通过DMA拷贝到NIC Buffer，无需CPU拷贝。这也是零拷贝这一说法的来源。除了减少数据拷贝外，因为整个读文件-网络发送由一个<code>sendfile</code>调用完成，整个过程只有两次上下文切换，因此大大提高了性能，结合。</p>
+<h4 id="sendfile和transferTo实现零拷贝"><a href="#sendfile和transferTo实现零拷贝" class="headerlink" title="sendfile和transferTo实现零拷贝"></a>sendfile和transferTo实现零拷贝</h4><p>Linux 2.4+内核通过<code>sendfile</code>系统调用，提供了零拷贝。数据通过DMA拷贝到内核态Buffer后，直接通过DMA拷贝到NIC Buffer，无需CPU拷贝。这也是零拷贝这一说法的来源。除了减少数据拷贝外，因为整个读文件-网络发送由一个<code>sendfile</code>调用完成，整个过程只有两次上下文切换，因此大大提高了性能。</p>
 <p><a href="http://www.jasongj.com/img/kafka/KafkaColumn6/NIO.png" target="_blank" rel="noopener"><img src="http://media.kosho.tech/blog/20200206/zero-copy2.png" alt="零拷贝 两次上下文切换"></a></p>
 <p>具体实现上，Kafka的数据传输通过TransportLayer来完成，其子类<code>PlaintextTransportLayer</code>通过<a href="http://www.jasongj.com/java/nio_reactor/" target="_blank" rel="noopener">Java NIO</a>的FileChannel的<code>transferTo</code>和<code>transferFrom</code>方法实现零拷贝。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Overridepublic</span> <span class="function"><span class="keyword">long</span> <span class="title">transferFrom</span><span class="params">(FileChannel fileChannel, <span class="keyword">long</span> position, <span class="keyword">long</span> count)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> fileChannel.transferTo(position, count, socketChannel);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
