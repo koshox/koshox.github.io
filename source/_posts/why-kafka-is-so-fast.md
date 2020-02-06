@@ -1,5 +1,5 @@
 ---
-title: why kafka is so fast
+title: Kafka高性能原理
 date: 2020-02-06 23:00:42
 tags:
 - Kafka
@@ -86,7 +86,7 @@ Socket.send(buffer)
 
 #### sendfile和transferTo实现零拷贝
 
-Linux 2.4+内核通过`sendfile`系统调用，提供了零拷贝。数据通过DMA拷贝到内核态Buffer后，直接通过DMA拷贝到NIC Buffer，无需CPU拷贝。这也是零拷贝这一说法的来源。除了减少数据拷贝外，因为整个读文件-网络发送由一个`sendfile`调用完成，整个过程只有两次上下文切换，因此大大提高了性能，结合。
+Linux 2.4+内核通过`sendfile`系统调用，提供了零拷贝。数据通过DMA拷贝到内核态Buffer后，直接通过DMA拷贝到NIC Buffer，无需CPU拷贝。这也是零拷贝这一说法的来源。除了减少数据拷贝外，因为整个读文件-网络发送由一个`sendfile`调用完成，整个过程只有两次上下文切换，因此大大提高了性能。
 
 [![零拷贝 两次上下文切换](http://media.kosho.tech/blog/20200206/zero-copy2.png)](http://www.jasongj.com/img/kafka/KafkaColumn6/NIO.png)
 
