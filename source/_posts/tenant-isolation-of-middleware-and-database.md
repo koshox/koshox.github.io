@@ -22,7 +22,7 @@ SaaS应用基本都采用了多租户的架构，以支撑更多的业务。提�
 2. 部分共享，租户共享一个数据库，以schema或者table区分
 3. 完全共享，租户共享相同的数据库表，以tenant_id列区分
 
-这里说一种基于元数据，可编排的方式。以资源为粒度进行隔离，租户可以独享资源，一些租户也可以共享资源。
+这里说一种基于元数据，可编排的方式。以资源为粒度进行隔离，充了钱的租户们可以独享资源，一些不那么重要的租户或者测试租户也可以共享资源。
 ![Multiple tenant resource config](http://media.kosho.tech/blog/20200205/multiple-tenant-res.png)
 - 租户1：MySQL1(schema=tenant1)，RabbitMQ1，Kafka1，Redis1(index=0)
 - 租户2：MySQL2(schema=tenant2)，RabbitMQ2，Kafka1，Redis2(index=0)
