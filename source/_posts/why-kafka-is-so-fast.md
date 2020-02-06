@@ -105,7 +105,9 @@ Linux 2.4+内核通过`sendfile`系统调用，提供了零拷贝。数据通过
 
 Kafka的每条消息都是append的，不会从中间写入和删除消息，保证了磁盘的顺序访问。
 
-即使是顺序读写，过于频繁的大量小IO操作一样会造成磁盘的瓶颈，此时又变成了随机读写。Kafka的策略是把消息集合在一起，批量发送，尽可能减少对磁盘的访问。所以，Kafka的Topic和Partition数量不宜过多，可以看阿里云的这个测试结果，超过10000w以后Kafka性能会急剧下降。
+即使是顺序读写，过于频繁的大量小IO操作一样会造成磁盘的瓶颈，此时又变成了随机读写。Kafka的策略是把消息集合在一起，批量发送，尽可能减少对磁盘的访问。所以，Kafka的Topic和Partition数量不宜过多，可以看阿里云中间件团队的这篇文章：[Kafka vs RocketMQ——多Topic对性能稳定性的影响](http://jm.taobao.org/2016/04/20/kafka-vs-rocketmq-3/)，超过64个Topic/Partition以后，Kafka性能会急剧下降。
+
+RocketMQ存储模型与Kafka有些差异，RocketMQ会把所有的数据存放在相同的日志文件，所以单机可以支持非常多的队列。
 
 ![Disk sequence access](http://media.kosho.tech/blog/20200206/disk-seq-access.webp.jpg)
 
