@@ -211,8 +211,9 @@ Linux上，动态attach大概分为这么几步：
 
 然后就可以通过如下的通讯格式进行交互了：
 
+```xml
 <PROTOCAL VERSION>\0<COMMAND>\0<ARG1>\0<ARG2>\0<ARG3>
-
+```
 这个机制和上面代码也说明了为什么不能远程attach，以及不同用户之间attach为什么会失败。
 
 -agentlib:agent-lib-name=options和-agentpath:path-to-agent=options这两种方式则会调用这么一个JNI的方法：
