@@ -111,7 +111,7 @@ WatchAdviceListener
     }
 ```
 
-## JVMTI
+# JVMTI
 
 然后呢？还没有结束，继续看一下attach下面一层是什么。
 
@@ -222,7 +222,7 @@ JNIEXPORT jint JNICALL Agent_Onload(JavaVM* vm, char *options, void *reserved)
 
 会直接传递VM指针进来，就可以拿到JVMTI指针，相比较java代码功能会更强大一些。
 
-## 火焰图原理（async-profiler）
+# 火焰图原理（async-profiler）
 
 Arthas的功能其实到上面已经结束啦，但是arthas还集成了另一个大杀器，async-profiler（IDEA的 JVM Profiler也是集成的这个），可以直接对java热点方法生成火焰图！
 
