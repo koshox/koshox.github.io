@@ -80,7 +80,9 @@ Java创建一个对象有如下的步骤：
 
 从DCL单例已经可以发现，volatile是为了防止指令重排序，既然final语义确保了写不会重排序到构造函数之外，同样可以保证可见性，是不是用final也可以呢？的确可以。
 
-这种写法是在CMU的SEI CERT wiki上看到的：https://wiki.sei.cmu.edu/confluence/display/java/LCK10-J.+Use+a+correct+form+of+the+double-checked+locking+idiom，本质上就是用final代替volatile的DCL。
+这种写法是在CMU的SEI CERT wiki上看到的：https://wiki.sei.cmu.edu/confluence/display/java/LCK10-J.+Use+a+correct+form+of+the+double-checked+locking+idiom
+
+本质上是用final代替volatile的DCL。
 
 ```java
 public final class Helper {
