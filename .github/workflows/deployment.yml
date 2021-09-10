@@ -24,9 +24,9 @@ jobs:
 
     - name: Cache node modules
       uses: actions/cache@v1
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
 
     - name: Install dependencies & Generate static files
       run: |
