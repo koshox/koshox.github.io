@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-kosho.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-kosho.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Java,DFA,NFA,正则表达式,读书笔记,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="现代计算机的强大能力伴随着同样的复杂性，我们很难了解所有的细节，此时计算机的简化模型就显得很有用了，可以帮助我们建立完整的认识。 有限自动机（Finite Automaton）是一台计算机的极简模型，没有持久化的存储，只有极少的RAM，最简单输入输出模式，我们从FA开始，看下它能做到什么。 这篇文章是《计算的本质》第3章的读书笔记，通过Java一步一步实现DFA、NFA，最后实现一个简单的正则表达">
+<meta name="keywords" content="Java,DFA,NFA,正则表达式,读书笔记">
+<meta property="og:type" content="article">
+<meta property="og:title" content="计算的本质1 - 从自动机到正则表达式 Java实现">
+<meta property="og:url" content="http://kosho.tech/2020/04/04/understanding-computation-one/index.html">
+<meta property="og:site_name" content="Kosho&#39;s blog">
+<meta property="og:description" content="现代计算机的强大能力伴随着同样的复杂性，我们很难了解所有的细节，此时计算机的简化模型就显得很有用了，可以帮助我们建立完整的认识。 有限自动机（Finite Automaton）是一台计算机的极简模型，没有持久化的存储，只有极少的RAM，最简单输入输出模式，我们从FA开始，看下它能做到什么。 这篇文章是《计算的本质》第3章的读书笔记，通过Java一步一步实现DFA、NFA，最后实现一个简单的正则表达">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://media.kosho.tech/blog/20200420/fa1.png">
+<meta property="og:image" content="http://media.kosho.tech/blog/20200420/fa2.png">
+<meta property="og:image" content="http://media.kosho.tech/blog/20200420/nfa1.png">
+<meta property="og:image" content="http://media.kosho.tech/blog/20200420/nfa2.png">
+<meta property="og:image" content="http://media.kosho.tech/blog/20200420/nfa3.png">
+<meta property="og:image" content="http://media.kosho.tech/blog/20200420/nfa4.png">
+<meta property="og:image" content="http://media.kosho.tech/blog/20200420/nfa5.png">
+<meta property="og:updated_time" content="2021-09-10T17:03:20.554Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="计算的本质1 - 从自动机到正则表达式 Java实现">
+<meta name="twitter:description" content="现代计算机的强大能力伴随着同样的复杂性，我们很难了解所有的细节，此时计算机的简化模型就显得很有用了，可以帮助我们建立完整的认识。 有限自动机（Finite Automaton）是一台计算机的极简模型，没有持久化的存储，只有极少的RAM，最简单输入输出模式，我们从FA开始，看下它能做到什么。 这篇文章是《计算的本质》第3章的读书笔记，通过Java一步一步实现DFA、NFA，最后实现一个简单的正则表达">
+<meta name="twitter:image" content="http://media.kosho.tech/blog/20200420/fa1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://kosho.tech/2020/04/04/understanding-computation-one/">
+
+
+
+
+
+  <title>计算的本质1 - 从自动机到正则表达式 Java实现 | Kosho's blog</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2c1cf72231a432b1f23daf411f245e18";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Kosho's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">计算机领域没有什么事是一层中间层解决不了的，如果有，那就两层</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://kosho.tech/2020/04/04/understanding-computation-one/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Kosho">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Kosho's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">计算的本质1 - 从自动机到正则表达式 Java实现</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-04-04T00:37:21+08:00">
+                2020-04-04
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/读书笔记/" itemprop="url" rel="index">
+                    <span itemprop="name">读书笔记</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2020/04/04/understanding-computation-one/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count gitment-comments-count" data-xid="/2020/04/04/understanding-computation-one/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  4.5k
+                </span>
+              
+
+              
+
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>现代计算机的强大能力伴随着同样的复杂性，我们很难了解所有的细节，此时计算机的简化模型就显得很有用了，可以帮助我们建立完整的认识。</p>
+<p>有限自动机（Finite Automaton）是一台计算机的极简模型，没有持久化的存储，只有极少的RAM，最简单输入输出模式，我们从FA开始，看下它能做到什么。</p>
+<p>这篇文章是《计算的本质》第3章的读书笔记，通过Java一步一步实现DFA、NFA，最后实现一个简单的正则表达式引擎。</p>
+<h2 id="DFA（确定性有限自动机）"><a href="#DFA（确定性有限自动机）" class="headerlink" title="DFA（确定性有限自动机）"></a>DFA（确定性有限自动机）</h2><p><img src="http://media.kosho.tech/blog/20200420/fa1.png" alt="fa1"></p>
+<p>这是一个非常简单的DFA，起始状态为1，接受状态为2，状态之间的箭头代表规则：</p>
+<ul>
+<li>状态 1 并且读入字符 • a 时，切换到状态 2。</li>
+<li>处于状态 2 并且读入字符 • a 时，切换到状态 1。</li>
+</ul>
+<p>这个自动机接受奇数数量的a字符串，“a”，“aaa”等，拒绝其他的字符串输入。并且提供一个“是 / 否”的输出，以表明这个序列是否已经被接受，它已经可以被称之为称为简单计算机了。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>真实计算机</th>
+<th>有限自动机</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>持久存储</td>
+<td>硬盘</td>
+<td>无</td>
+</tr>
+<tr>
+<td>临时存储</td>
+<td>RAM</td>
+<td>当前状态</td>
+</tr>
+<tr>
+<td>输入</td>
+<td>键盘、鼠标、网络等</td>
+<td>字符流</td>
+</tr>
+<tr>
+<td>输出</td>
+<td>显示设备、音响、网络等</td>
+<td>当前状态是否为一个接受状态</td>
+</tr>
+<tr>
+<td>处理器</td>
+<td>能执行任何程序的 CPU 核心</td>
+<td>根据输入改变状态的硬编码规则</td>
+</tr>
+</tbody></table>
+<h3 id="确定性"><a href="#确定性" class="headerlink" title="确定性"></a>确定性</h3><p>上面说的这台自动机的状态始终是确定的，如果满足下面两个条件，就可以称之为DFA：</p>
+<ul>
+<li>不存在这样的状态：它的下一次转换状态因为有彼此冲突的规则而有二义性（这意味着一个状态对于同样的输入，不能有多个规则）</li>
+<li>没有遗漏：不存在这样的状态：它的下一次转换状态因为缺失规则而未知（这意味着每个状态都必须针对每个可能的输入字符有至少一个规则）</li>
+</ul>
+<h3 id="代码模拟"><a href="#代码模拟" class="headerlink" title="代码模拟"></a>代码模拟</h3><p>DFA很容易用代码对其进行模拟，然后就可以进行一些交互测试了。不得不说ruby的确是非常优雅的语言，用java描述稍显冗长。</p>
+<p>FA规则：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">FaRule</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> Object state;</span><br><span class="line">    <span class="keyword">private</span> Character character;</span><br><span class="line">    <span class="keyword">private</span> Object nextState;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">FaRule</span><span class="params">(Object state, Character character, Object nextState)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.state = state;</span><br><span class="line">        <span class="keyword">this</span>.nextState = nextState;</span><br><span class="line">        <span class="keyword">this</span>.character = character;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">appliesTo</span><span class="params">(Object state, Character character)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.state.equals(state) &amp;&amp; equals(<span class="keyword">this</span>.character, character);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">follow</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> nextState;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Character <span class="title">getCharacter</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> character;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">toString</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"FaRule&#123;"</span> + state + <span class="string">"--"</span> + character + <span class="string">"--&gt;"</span> + nextState + <span class="string">'&#125;'</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">boolean</span> <span class="title">equals</span><span class="params">(Character a, Character b)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> (a == <span class="keyword">null</span> &amp;&amp; b == <span class="keyword">null</span>) || (a != <span class="keyword">null</span> &amp;&amp; a.equals(b));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>规则表：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DfaRuleBook</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> List&lt;FaRule&gt; rules;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">DfaRuleBook</span><span class="params">(List&lt;FaRule&gt; rules)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.rules = rules;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">nextState</span><span class="params">(Object state, <span class="keyword">char</span> character)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> ruleFor(state, character)</span><br><span class="line">                .map(FaRule::follow)</span><br><span class="line">                .orElse(<span class="keyword">null</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Optional&lt;FaRule&gt; <span class="title">ruleFor</span><span class="params">(Object state, <span class="keyword">char</span> character)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> rules.stream()</span><br><span class="line">                .filter(faRule -&gt; faRule.appliesTo(state, character))</span><br><span class="line">                .findFirst();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>DFA：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Dfa</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> Object currentState;</span><br><span class="line">    <span class="keyword">private</span> Object[] acceptStates;</span><br><span class="line">    <span class="keyword">private</span> DfaRuleBook ruleBook;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Dfa</span><span class="params">(Object currentState, Object[] acceptStates, DfaRuleBook ruleBook)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.currentState = currentState;</span><br><span class="line">        <span class="keyword">this</span>.acceptStates = acceptStates;</span><br><span class="line">        <span class="keyword">this</span>.ruleBook = ruleBook;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">accepting</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">for</span> (Object acceptState : acceptStates) &#123;</span><br><span class="line">            <span class="keyword">if</span> (acceptState.equals(currentState)) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">readCharacter</span><span class="params">(<span class="keyword">char</span> character)</span> </span>&#123;</span><br><span class="line">        currentState = ruleBook.nextState(currentState, character);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">readString</span><span class="params">(String str)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; str.length(); i++) &#123;</span><br><span class="line">            readCharacter(str.charAt(i));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们只需要这三个类就可以模拟一个DFA了，再增加一个DfaDesign类用来简化操作：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DfaDesign</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> Object startState;</span><br><span class="line">    <span class="keyword">private</span> Object[] acceptStates;</span><br><span class="line">    <span class="keyword">private</span> DfaRuleBook ruleBook;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">DfaDesign</span><span class="params">(Object startState, Object[] acceptStates, DfaRuleBook ruleBook)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.startState = startState;</span><br><span class="line">        <span class="keyword">this</span>.acceptStates = acceptStates;</span><br><span class="line">        <span class="keyword">this</span>.ruleBook = ruleBook;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Dfa <span class="title">toDfa</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> Dfa(startState, acceptStates, ruleBook);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">accepts</span><span class="params">(String str)</span> </span>&#123;</span><br><span class="line">        Dfa dfa = toDfa();</span><br><span class="line">        dfa.readString(str);</span><br><span class="line">        <span class="keyword">return</span> dfa.accepting();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>好了，现在我们来模拟这样一个DFA，接受”ab”，”baba”，”baaab”这样的字符串，拒绝”a”，”baa”等形式的字符串：</p>
+<p><img src="http://media.kosho.tech/blog/20200420/fa2.png" alt="fa2"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">List&lt;FaRule&gt; rules = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">rules.add(<span class="keyword">new</span> FaRule(<span class="number">1</span>, <span class="string">'a'</span>, <span class="number">2</span>));</span><br><span class="line">rules.add(<span class="keyword">new</span> FaRule(<span class="number">1</span>, <span class="string">'b'</span>, <span class="number">1</span>));</span><br><span class="line">rules.add(<span class="keyword">new</span> FaRule(<span class="number">2</span>, <span class="string">'a'</span>, <span class="number">2</span>));</span><br><span class="line">rules.add(<span class="keyword">new</span> FaRule(<span class="number">2</span>, <span class="string">'b'</span>, <span class="number">3</span>));</span><br><span class="line">rules.add(<span class="keyword">new</span> FaRule(<span class="number">3</span>, <span class="string">'a'</span>, <span class="number">3</span>));</span><br><span class="line">rules.add(<span class="keyword">new</span> FaRule(<span class="number">3</span>, <span class="string">'b'</span>, <span class="number">3</span>));</span><br><span class="line">DfaRuleBook ruleBook = <span class="keyword">new</span> DfaRuleBook(rules);</span><br><span class="line">DfaDesign dfaDesign = <span class="keyword">new</span> DfaDesign(<span class="number">1</span>, <span class="keyword">new</span> Object[]&#123;<span class="number">3</span>&#125;, ruleBook);</span><br><span class="line">Assert.assertTrue(dfaDesign.accepts(<span class="string">"baaab"</span>));</span><br></pre></td></tr></table></figure>
+
+<p>现在看起来还没什么用，只能模拟一些非常简单的东西，后面我们可以看到更实际的应用。</p>
+<h2 id="NFA（非确定性有限自动机）"><a href="#NFA（非确定性有限自动机）" class="headerlink" title="NFA（非确定性有限自动机）"></a>NFA（非确定性有限自动机）</h2><p>DFA理解和实现都很简单，如果我们去掉确定性约束，让自动机拥有对立的规则和多条可能路径，会怎么样呢？</p>
+<h3 id="非确定性"><a href="#非确定性" class="headerlink" title="非确定性"></a>非确定性</h3><p>如果我们想设计一台DFA，接受a和b组成，倒数第三个字符是a的字符串。会发现比较麻烦，无法预先知道什么时候能读到倒数第三个字符。</p>
+<p>如果我们放松确定性的限制，并且允许规则手册对于一个状态和输入包含多条规则（或者根本没有规则），那么就可以设计一台能完成任务的机器，即一台NFA：</p>
+<p><img src="http://media.kosho.tech/blog/20200420/nfa1.png" alt="nfa1"></p>
+<p>如果存在某条路径能让 NFA 按照它的某些规则执行并终止于一个接受状态，那它就能接受这个字符串。</p>
+<h3 id="代码模拟-1"><a href="#代码模拟-1" class="headerlink" title="代码模拟"></a>代码模拟</h3><p>NFA规则表：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">NfaRuleBook</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> List&lt;FaRule&gt; rules;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">NfaRuleBook</span><span class="params">(List&lt;FaRule&gt; rules)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.rules = rules;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Set&lt;Object&gt; <span class="title">nextStates</span><span class="params">(Collection&lt;Object&gt; states, Character character)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> states.stream()</span><br><span class="line">                .map(state -&gt; followRulesFor(state, character))</span><br><span class="line">                .flatMap(Collection::stream)</span><br><span class="line">                .collect(Collectors.toSet());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Set&lt;Object&gt; <span class="title">followRulesFor</span><span class="params">(Object state, Character character)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> rulesFor(state, character).stream().map(FaRule::follow).collect(Collectors.toSet());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Set&lt;FaRule&gt; <span class="title">rulesFor</span><span class="params">(Object state, Character character)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> rules.stream()</span><br><span class="line">                .filter(faRule -&gt; faRule.appliesTo(state, character))</span><br><span class="line">                .collect(Collectors.toSet());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Set&lt;Object&gt; <span class="title">followFreeMoves</span><span class="params">(Collection&lt;Object&gt; states)</span> </span>&#123;</span><br><span class="line">        Set&lt;Object&gt; moreStates = nextStates(states, <span class="keyword">null</span>);</span><br><span class="line">        <span class="keyword">if</span> (states.containsAll(moreStates)) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> HashSet&lt;&gt;(states);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            states.addAll(moreStates);</span><br><span class="line">            <span class="keyword">return</span> followFreeMoves(states);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> List&lt;Character&gt; <span class="title">alphabet</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> rules.stream()</span><br><span class="line">                .map(FaRule::getCharacter)</span><br><span class="line">                .distinct()</span><br><span class="line">                .filter(Objects::nonNull)</span><br><span class="line">                .collect(Collectors.toList());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> List&lt;FaRule&gt; <span class="title">getRules</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> rules;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>NFA：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Nfa</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> Set&lt;Object&gt; currentStates;</span><br><span class="line">    <span class="keyword">private</span> Set&lt;Object&gt; acceptStates;</span><br><span class="line">    <span class="keyword">private</span> NfaRuleBook ruleBook;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Nfa</span><span class="params">(Set&lt;Object&gt; currentStates, Set&lt;Object&gt; acceptStates, NfaRuleBook ruleBook)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.currentStates = currentStates;</span><br><span class="line">        <span class="keyword">this</span>.acceptStates = acceptStates;</span><br><span class="line">        <span class="keyword">this</span>.ruleBook = ruleBook;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">accepting</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">for</span> (Object currentState : getCurrentStates()) &#123;</span><br><span class="line">            <span class="keyword">if</span> (acceptStates.contains(currentState)) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">readCharacter</span><span class="params">(Character character)</span> </span>&#123;</span><br><span class="line">        currentStates = ruleBook.nextStates(getCurrentStates(), character);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">readString</span><span class="params">(String str)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; str.length(); i++) &#123;</span><br><span class="line">            readCharacter(str.charAt(i));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Set&lt;Object&gt; <span class="title">getCurrentStates</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> ruleBook.followFreeMoves(currentStates);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>NfaDesign：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">NfaDesign</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> Object startState;</span><br><span class="line">    <span class="keyword">private</span> Set&lt;Object&gt; acceptStates;</span><br><span class="line">    <span class="keyword">private</span> NfaRuleBook ruleBook;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">NfaDesign</span><span class="params">(Object startState, Set&lt;Object&gt; acceptStates, NfaRuleBook ruleBook)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.startState = startState;</span><br><span class="line">        <span class="keyword">this</span>.acceptStates = acceptStates;</span><br><span class="line">        <span class="keyword">this</span>.ruleBook = ruleBook;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Nfa <span class="title">toNfa</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> Nfa(Sets.create(startState), acceptStates, ruleBook);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Nfa <span class="title">toNfa</span><span class="params">(Set&lt;Object&gt; currentStates)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> Nfa(currentStates, acceptStates, ruleBook);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">accepts</span><span class="params">(String str)</span> </span>&#123;</span><br><span class="line">        Nfa nfa = toNfa();</span><br><span class="line">        nfa.readString(str);</span><br><span class="line">        <span class="keyword">return</span> nfa.accepting();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">getStartState</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> startState;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Set&lt;Object&gt; <span class="title">getAcceptStates</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> acceptStates;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> NfaRuleBook <span class="title">getRuleBook</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> ruleBook;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>至此，已经可以模拟一台带有自由移动的NFA了，它可以在没有输入的情况下，在不同的状态之间做出转移。</p>
+<p>现在我们设计一台可以接受2或3倍数长度的a字符串的NFA，其中的虚线箭头表示自由移动：</p>
+<p><img src="http://media.kosho.tech/blog/20200420/nfa2.png" alt="nfa2"></p>
+<p>现在用代码模拟试试：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">List&lt;FaRule&gt; rules = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">rules.add(<span class="keyword">new</span> FaRule(<span class="number">1</span>, <span class="keyword">null</span>, <span class="number">2</span>));</span><br><span class="line">rules.add(<span class="keyword">new</span> FaRule(<span class="number">1</span>, <span class="keyword">null</span>, <span class="number">4</span>));</span><br><span class="line">rules.add(<span class="keyword">new</span> FaRule(<span class="number">2</span>, <span class="string">'a'</span>, <span class="number">3</span>));</span><br><span class="line">rules.add(<span class="keyword">new</span> FaRule(<span class="number">3</span>, <span class="string">'a'</span>, <span class="number">2</span>));</span><br><span class="line">rules.add(<span class="keyword">new</span> FaRule(<span class="number">4</span>, <span class="string">'a'</span>, <span class="number">5</span>));</span><br><span class="line">rules.add(<span class="keyword">new</span> FaRule(<span class="number">5</span>, <span class="string">'a'</span>, <span class="number">6</span>));</span><br><span class="line">rules.add(<span class="keyword">new</span> FaRule(<span class="number">6</span>, <span class="string">'a'</span>, <span class="number">4</span>));</span><br><span class="line">NfaRuleBook ruleBook = <span class="keyword">new</span> NfaRuleBook(rules);</span><br><span class="line">NfaDesign nfaDesign = <span class="keyword">new</span> NfaDesign(<span class="number">1</span>, Sets.create(<span class="number">2</span>, <span class="number">4</span>), ruleBook);</span><br><span class="line">Assert.assertFalse(nfaDesign.accepts(<span class="string">"aaaaa"</span>));</span><br><span class="line">Assert.assertTrue(nfaDesign.accepts(<span class="string">"aaaaaa"</span>));</span><br></pre></td></tr></table></figure>
+
+<h2 id="正则表达式"><a href="#正则表达式" class="headerlink" title="正则表达式"></a>正则表达式</h2><p>上面说了这么多，那它到底有什么用呢？一个比较典型的应用就是正则表达式，基本上所有的语言都实现了对正则表达式的支持，大部分也都采用了NFA来实现。</p>
+<p>试一试用Java实现一个简易的正则表达式引擎，支持这样几个功能：</p>
+<ol>
+<li>空字符串</li>
+<li>‘a’，’b’这样的字符</li>
+<li>|或运算符</li>
+<li>*重复运算符</li>
+<li>把正则连接起来，如a和b连接得到ab</li>
+</ol>
+<p>这里没有实现?和+这些功能，其实ab?等同于ab|a，而ab+等同于abb*，其他计数重复（如 a{2,5} ）和字符组（如 [abc] ）等方便的特性也是这样，可以用已有的特性实现。至于捕获组、反向引用，那就是高级特性了。</p>
+<p>我们为每类正则表达式定义一个类，用它们来表示语法树，同时，可以将它们转换成对应的NFA。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 正则基类</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">Pattern</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">int</span> <span class="title">precedence</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> NfaDesign <span class="title">toNfaDesign</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">bracket</span><span class="params">(<span class="keyword">int</span> outerPrecedence)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (precedence() &lt; outerPrecedence) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="string">"("</span> + toString() + <span class="string">")"</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> toString();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">inspect</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"/"</span> + <span class="keyword">this</span> + <span class="string">"/"</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">matches</span><span class="params">(String str)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> toNfaDesign().accepts(str);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 空字符串</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Empty</span> <span class="keyword">extends</span> <span class="title">Pattern</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">precedence</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">3</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> NfaDesign <span class="title">toNfaDesign</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Integer start = IdGen.gen();</span><br><span class="line">        NfaRuleBook ruleBook = <span class="keyword">new</span> NfaRuleBook(Collections.emptyList());</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> NfaDesign(start, Sets.create(start), ruleBook);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">toString</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">""</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 字符</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Literal</span> <span class="keyword">extends</span> <span class="title">Pattern</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> Character character;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Literal</span><span class="params">(Character character)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.character = character;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">precedence</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">3</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> NfaDesign <span class="title">toNfaDesign</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Integer start = IdGen.gen();</span><br><span class="line">        Integer accept = IdGen.gen();</span><br><span class="line">        FaRule rule = <span class="keyword">new</span> FaRule(start, character, accept);</span><br><span class="line">        NfaRuleBook ruleBook = <span class="keyword">new</span> NfaRuleBook(Collections.singletonList(rule));</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> NfaDesign(start, Sets.create(accept), ruleBook);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">toString</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> String.valueOf(character);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 连接</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Concat</span> <span class="keyword">extends</span> <span class="title">Pattern</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> Pattern first;</span><br><span class="line">    <span class="keyword">private</span> Pattern second;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Concat</span><span class="params">(Pattern first, Pattern second)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.first = first;</span><br><span class="line">        <span class="keyword">this</span>.second = second;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">toString</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> first.bracket(precedence()) + second.bracket(precedence());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">precedence</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> NfaDesign <span class="title">toNfaDesign</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        NfaDesign firstNfaDesign = first.toNfaDesign();</span><br><span class="line">        NfaDesign secondNfaDesign = second.toNfaDesign();</span><br><span class="line">        Object startState = firstNfaDesign.getStartState();</span><br><span class="line">        Set&lt;Object&gt; acceptStates = secondNfaDesign.getAcceptStates();</span><br><span class="line"></span><br><span class="line">        List&lt;FaRule&gt; rules = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">        rules.addAll(firstNfaDesign.getRuleBook().getRules());</span><br><span class="line">        rules.addAll(secondNfaDesign.getRuleBook().getRules());</span><br><span class="line">        List&lt;FaRule&gt; extraRules = firstNfaDesign.getAcceptStates().stream()</span><br><span class="line">                .map(state -&gt; <span class="keyword">new</span> FaRule(state, <span class="keyword">null</span>, secondNfaDesign.getStartState()))</span><br><span class="line">                .collect(Collectors.toList());</span><br><span class="line">        rules.addAll(extraRules);</span><br><span class="line"></span><br><span class="line">        NfaRuleBook ruleBook = <span class="keyword">new</span> NfaRuleBook(rules);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> NfaDesign(startState, acceptStates, ruleBook);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 选择</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Choose</span> <span class="keyword">extends</span> <span class="title">Pattern</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> Pattern first;</span><br><span class="line">    <span class="keyword">private</span> Pattern second;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Choose</span><span class="params">(Pattern first, Pattern second)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.first = first;</span><br><span class="line">        <span class="keyword">this</span>.second = second;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">toString</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> first.bracket(precedence()) + <span class="string">"|"</span> + second.bracket(precedence());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">precedence</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> NfaDesign <span class="title">toNfaDesign</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        NfaDesign firstNfaDesign = first.toNfaDesign();</span><br><span class="line">        NfaDesign secondNfaDesign = second.toNfaDesign();</span><br><span class="line">        Integer startState = IdGen.gen();</span><br><span class="line">        Set&lt;Object&gt; acceptStates = <span class="keyword">new</span> HashSet&lt;&gt;();</span><br><span class="line">        acceptStates.addAll(firstNfaDesign.getAcceptStates());</span><br><span class="line">        acceptStates.addAll(secondNfaDesign.getAcceptStates());</span><br><span class="line"></span><br><span class="line">        List&lt;FaRule&gt; rules = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">        rules.addAll(firstNfaDesign.getRuleBook().getRules());</span><br><span class="line">        rules.addAll(secondNfaDesign.getRuleBook().getRules());</span><br><span class="line">        <span class="comment">// extra rule</span></span><br><span class="line">        rules.add(<span class="keyword">new</span> FaRule(startState, <span class="keyword">null</span>, firstNfaDesign.getStartState()));</span><br><span class="line">        rules.add(<span class="keyword">new</span> FaRule(startState, <span class="keyword">null</span>, secondNfaDesign.getStartState()));</span><br><span class="line"></span><br><span class="line">        NfaRuleBook ruleBook = <span class="keyword">new</span> NfaRuleBook(rules);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> NfaDesign(startState, acceptStates, ruleBook);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 重复</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Repeat</span> <span class="keyword">extends</span> <span class="title">Pattern</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> Pattern pattern;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Repeat</span><span class="params">(Pattern pattern)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.pattern = pattern;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">toString</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> pattern.bracket(precedence()) + <span class="string">"*"</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">precedence</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">2</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> NfaDesign <span class="title">toNfaDesign</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        NfaDesign patternNfaDesign = pattern.toNfaDesign();</span><br><span class="line">        Integer startState = IdGen.gen();</span><br><span class="line">        Set&lt;Object&gt; acceptStates = <span class="keyword">new</span> HashSet&lt;&gt;();</span><br><span class="line">        acceptStates.add(startState);</span><br><span class="line">        acceptStates.addAll(patternNfaDesign.getAcceptStates());</span><br><span class="line"></span><br><span class="line">        ArrayList&lt;FaRule&gt; rules = <span class="keyword">new</span> ArrayList&lt;&gt;(patternNfaDesign.getRuleBook().getRules());</span><br><span class="line"></span><br><span class="line">        patternNfaDesign.getAcceptStates().stream()</span><br><span class="line">                .map(acceptState -&gt; <span class="keyword">new</span> FaRule(acceptState, <span class="keyword">null</span>, patternNfaDesign.getStartState()))</span><br><span class="line">                .forEach(rules::add);</span><br><span class="line">        rules.add(<span class="keyword">new</span> FaRule(startState, <span class="keyword">null</span>, patternNfaDesign.getStartState()));</span><br><span class="line"></span><br><span class="line">        NfaRuleBook ruleBook = <span class="keyword">new</span> NfaRuleBook(rules);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> NfaDesign(startState, acceptStates, ruleBook);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>precedence是为了toString的时候正确展示括号，核心的操作是toNfaDesign，把正则转换为NFA。</p>
+<p>空字符串和字符转换NFA非常简单，不必多说。对于连接，|，*这三种运算，如何构造NFA呢：</p>
+<h3 id="连接操作转换NFA"><a href="#连接操作转换NFA" class="headerlink" title="连接操作转换NFA"></a>连接操作转换NFA</h3><p>现在能把单个字符的正则表达式 a和 b 转换成 NFA，那怎么把 ab 转成一个 NFA 呢？<br>对于 ab ，我们可以把两个 NFA 按顺序连接到一起，用自由移动把它们联结在一起，并且保留第二个 NFA 的接受状态：</p>
+<p><img src="http://media.kosho.tech/blog/20200420/nfa3.png" alt="nfa3"></p>
+<h3 id="选择操作转换NFA"><a href="#选择操作转换NFA" class="headerlink" title="选择操作转换NFA"></a>选择操作转换NFA</h3><p>在最简单的情况下，正则表达式 a 和 b 的 NFA 能结合起来构造成正则表达式 a|b 的 NFA，方法是增加一个新的起始状态并使用自由移动把它与两台原始机器之前的起始状态连接起来：</p>
+<p><img src="http://media.kosho.tech/blog/20200420/nfa4.png" alt="nfa4"></p>
+<h3 id="重复操作转换NFA"><a href="#重复操作转换NFA" class="headerlink" title="重复操作转换NFA"></a>重复操作转换NFA</h3><p>如何把与一个字符串匹配的 NFA，转换成能匹配同一个字符串重复零次或者更多次的 NFA 呢？我们为 a* 构造一个 NFA，其开头是一个 a 对应的NFA，然后做两个补充：</p>
+<ol>
+<li>从它的接受状态到开始状态增加一个自由移动，这样它就可以与多于一个 • ‘a’ 匹配了。</li>
+<li>增加一个可自由移动到旧的开始状态的新状态，并且使其作为接受状态，这样它就可以匹配空字符串了。<br><img src="http://media.kosho.tech/blog/20200420/nfa5.png" alt="nfa5"></li>
+</ol>
+<p>再来测试一下，已经可以构造复杂一些的模式来匹配字符串了，把正则转换成NFA来执行。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Pattern repeat = <span class="keyword">new</span> Repeat(</span><br><span class="line">        <span class="keyword">new</span> Choose(</span><br><span class="line">                <span class="keyword">new</span> Concat(</span><br><span class="line">                        <span class="keyword">new</span> Literal(<span class="string">'a'</span>),</span><br><span class="line">                        <span class="keyword">new</span> Literal(<span class="string">'b'</span>)),</span><br><span class="line">                <span class="keyword">new</span> Literal(<span class="string">'a'</span>)));</span><br><span class="line">Assert.assertEquals(repeat.inspect(), <span class="string">"/(ab|a)*/"</span>);</span><br><span class="line">Assert.assertTrue(repeat.matches(<span class="string">"ababa"</span>));</span><br></pre></td></tr></table></figure>
+
+<h3 id="正则语法树解析"><a href="#正则语法树解析" class="headerlink" title="正则语法树解析"></a>正则语法树解析</h3><p>虽然我们已经构建了一个正则实现，但是还缺一个语法解析器，如果我们能直接写(ab|a)*然后转换成AST（抽象语法树），而不是上面这一堆的new Repeat xxx手动构造语法树，那就方便多了。</p>
+<p>书里用了ruby的一个叫Treetop的库来做这个事，Java的话可以用antlr或者javacc，他们都是类似yacc的语法解析器，可以很方便的实现自己的DSL，我们项目里的类Sql的DSL就是用antlr实现的。</p>
+<p>不过这个正则语法比较简单，可以手写递归下降语法分析。</p>
+<p>Token定义：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Token</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> Token REPEAT = <span class="keyword">new</span> Token(TokenType.REPEAT, <span class="keyword">null</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> Token CHOOSE = <span class="keyword">new</span> Token(TokenType.CHOOSE, <span class="keyword">null</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> Token LPAR = <span class="keyword">new</span> Token(TokenType.LPAR, <span class="keyword">null</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> Token RPAR = <span class="keyword">new</span> Token(TokenType.RPAR, <span class="keyword">null</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">enum</span> TokenType &#123;</span><br><span class="line">        CHAR, LPAR, RPAR, CHOOSE, REPEAT</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> TokenType tokenType;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Object value;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Token</span><span class="params">(TokenType tokenType, Object value)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.tokenType = tokenType;</span><br><span class="line">        <span class="keyword">this</span>.value = value;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>词法解析器：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Tokenizer</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> String regex;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Token cur = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> index = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Tokenizer</span><span class="params">(String regex)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.regex = regex;</span><br><span class="line">        <span class="keyword">if</span> (regex != <span class="keyword">null</span> &amp;&amp; regex.length() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            cur = toToken(regex.charAt(<span class="number">0</span>));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Token <span class="title">getToken</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> cur;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">consumeToken</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        index++;</span><br><span class="line">        <span class="keyword">if</span> (index &lt; regex.length()) &#123;</span><br><span class="line">            cur = toToken(regex.charAt(index));</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (index == regex.length()) &#123;</span><br><span class="line">            cur = <span class="keyword">null</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> NoSuchElementException();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> Token <span class="title">toToken</span><span class="params">(<span class="keyword">char</span> ch)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">switch</span> (ch) &#123;</span><br><span class="line">            <span class="keyword">case</span> <span class="string">'*'</span>:</span><br><span class="line">                <span class="keyword">return</span> Token.REPEAT;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">case</span> <span class="string">'|'</span>:</span><br><span class="line">                <span class="keyword">return</span> Token.CHOOSE;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">case</span> <span class="string">'('</span>:</span><br><span class="line">                <span class="keyword">return</span> Token.LPAR;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">case</span> <span class="string">')'</span>:</span><br><span class="line">                <span class="keyword">return</span> Token.RPAR;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">default</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">new</span> Token(Token.TokenType.CHAR, ch);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>语法解析器：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">RegexParser</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Tokenizer tokenizer;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">RegexParser</span><span class="params">(String regex)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.tokenizer = <span class="keyword">new</span> Tokenizer(regex);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Pattern <span class="title">parse</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> choose();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> Pattern <span class="title">choose</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Pattern left = concatOrEmpty();</span><br><span class="line">        Token cur = tokenizer.getToken();</span><br><span class="line">        <span class="keyword">if</span> (cur != <span class="keyword">null</span> &amp;&amp; cur.tokenType == CHOOSE) &#123;</span><br><span class="line">            tokenizer.consumeToken();</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> Choose(left, choose());</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> left;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> Pattern <span class="title">concatOrEmpty</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Token cur = tokenizer.getToken();</span><br><span class="line">        <span class="keyword">if</span> (cur == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> Empty();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        Pattern concat = concat();</span><br><span class="line">        <span class="keyword">if</span> (concat == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> Empty();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> concat;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> Pattern <span class="title">concat</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Pattern left = repeat();</span><br><span class="line">        <span class="keyword">if</span> (left == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        Token cur = tokenizer.getToken();</span><br><span class="line">        <span class="keyword">if</span> (cur == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> left;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        Pattern concat = concat();</span><br><span class="line">        <span class="keyword">if</span> (concat != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> Concat(left, concat);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> left;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> Pattern <span class="title">repeat</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Pattern left = brackets();</span><br><span class="line">        Token cur = tokenizer.getToken();</span><br><span class="line">        <span class="keyword">if</span> (cur != <span class="keyword">null</span> &amp;&amp; cur.tokenType == REPEAT) &#123;</span><br><span class="line">            tokenizer.consumeToken();</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> Repeat(left);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> left;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> Pattern <span class="title">brackets</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Token cur = tokenizer.getToken();</span><br><span class="line">        <span class="keyword">if</span> (cur.tokenType == LPAR) &#123;</span><br><span class="line">            tokenizer.consumeToken();</span><br><span class="line">            Pattern choose = choose();</span><br><span class="line">            match(tokenizer.getToken(), RPAR);</span><br><span class="line">            <span class="keyword">return</span> choose;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> literal();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> Pattern <span class="title">literal</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Token cur = tokenizer.getToken();</span><br><span class="line">        <span class="keyword">if</span> (cur.tokenType == CHAR) &#123;</span><br><span class="line">            tokenizer.consumeToken();</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> Literal((Character) cur.value);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">match</span><span class="params">(Token token, Token.TokenType tokenType)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (token.tokenType != tokenType) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        tokenizer.consumeToken();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>运算符的优先级从上到下越来越高，| 运算符的绑定最宽松，因此 choose 规则在最前面。另外还要考虑带有括号的情况。</p>
+<p>最后给Pattern类加上编译函数</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Pattern <span class="title">compile</span><span class="params">(String regex)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> RegexParser(regex).parse();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>现在测试一下这个正则解析器：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Pattern pattern = Pattern.compile(<span class="string">"(a(|b))*"</span>);</span><br><span class="line">Assert.assertEquals(<span class="string">"/(a(|b))*/"</span>, pattern.inspect());</span><br><span class="line">Assert.assertTrue(pattern.matches(<span class="string">"ababa"</span>));</span><br><span class="line">Assert.assertFalse(pattern.matches(<span class="string">"ababac"</span>));</span><br></pre></td></tr></table></figure>
+
+<p>完全没毛病。</p>
+<h2 id="等价性"><a href="#等价性" class="headerlink" title="等价性"></a>等价性</h2><p>非确定性和自由移动让设计有限状态机执行特定的工作更容易，可以很方便的把正则转换为NFA。但是NFA做了什么DFA做不了的事吗？其实没有，他们完全等价。</p>
+<p>DFA是从一个当前状态移动到另一个，而NFA是从一个当前可能状态的集合移动到另一个可能状态的集合。尽管一个 NFA 的规则手册可以是非确定性的，但是对于一个给定的输入从当前状态出发移动到哪些状态，这个决定总是完全确定性的。</p>
+<p>所以完全可以用一台DFA来模拟NFA：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">NfaSimulation</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> NfaDesign nfaDesign;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">NfaSimulation</span><span class="params">(NfaDesign nfaDesign)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.nfaDesign = nfaDesign;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Set&lt;Object&gt; <span class="title">nextState</span><span class="params">(Set&lt;Object&gt; state, <span class="keyword">char</span> character)</span> </span>&#123;</span><br><span class="line">        Nfa nfa = nfaDesign.toNfa(state);</span><br><span class="line">        nfa.readCharacter(character);</span><br><span class="line">        <span class="keyword">return</span> nfa.getCurrentStates();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> List&lt;FaRule&gt; <span class="title">rulesFor</span><span class="params">(Set&lt;Object&gt; state)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> nfaDesign.getRuleBook().alphabet().stream()</span><br><span class="line">                .map(ch -&gt; <span class="keyword">new</span> FaRule(state, ch, nextState(state, ch))).collect(Collectors.toList());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Pair&lt;Set&lt;Set&lt;Object&gt;&gt;, List&lt;FaRule&gt;&gt; discoverStatesAndRules(Set&lt;Set&lt;Object&gt;&gt; states) &#123;</span><br><span class="line">        List&lt;FaRule&gt; rules = states.stream()</span><br><span class="line">                .map(<span class="keyword">this</span>::rulesFor)</span><br><span class="line">                .flatMap(Collection::stream)</span><br><span class="line">                .collect(Collectors.toList());</span><br><span class="line">        Set&lt;Object&gt; moreStates = rules.stream().map(FaRule::follow).collect(Collectors.toSet());</span><br><span class="line">        <span class="keyword">if</span> (states.containsAll(moreStates)) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> Pair&lt;&gt;(states, rules);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            Set&lt;Set&lt;Object&gt;&gt; newStates = <span class="keyword">new</span> HashSet&lt;&gt;(states);</span><br><span class="line">            moreStates.forEach(state -&gt; newStates.add((Set&lt;Object&gt;) state));</span><br><span class="line">            <span class="keyword">return</span> discoverStatesAndRules(newStates);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> DfaDesign <span class="title">toDfaDesign</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Set&lt;Object&gt; startStates = nfaDesign.toNfa().getCurrentStates();</span><br><span class="line">        Pair&lt;Set&lt;Set&lt;Object&gt;&gt;, List&lt;FaRule&gt;&gt; statesAndRules = discoverStatesAndRules(Sets.create(startStates));</span><br><span class="line">        Set&lt;Set&lt;Object&gt;&gt; states = statesAndRules.getLeft();</span><br><span class="line">        List&lt;FaRule&gt; rules = statesAndRules.getRight();</span><br><span class="line">        Set&lt;Set&lt;Object&gt;&gt; acceptStates = states.stream().filter(state -&gt; nfaDesign.toNfa(state).accepting()).collect(Collectors.toSet());</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> DfaDesign(startStates, acceptStates.toArray(), <span class="keyword">new</span> DfaRuleBook(rules));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再次测试：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Pattern pattern = Pattern.compile(<span class="string">"a(b|c)*d"</span>);</span><br><span class="line">Assert.assertTrue(pattern.matches(<span class="string">"abcbccbccd"</span>));</span><br><span class="line">Assert.assertFalse(pattern.matches(<span class="string">"abcbccca"</span>));</span><br><span class="line"></span><br><span class="line">NfaDesign nfaDesign = pattern.toNfaDesign();</span><br><span class="line">DfaDesign dfaDesign = <span class="keyword">new</span> NfaSimulation(nfaDesign).toDfaDesign();</span><br><span class="line">Assert.assertTrue(dfaDesign.accepts(<span class="string">"abcbccbccd"</span>));</span><br><span class="line">Assert.assertFalse(dfaDesign.accepts(<span class="string">"abcbcccae"</span>));</span><br></pre></td></tr></table></figure>
+
+<p>从性能上来说，DFA显然要比NFA高不少。DFA的时间复杂度是O(n)，NFA则是O(nm^2)，n是字符串长度，m是节点数。</p>
+<p>那为什么不用DFA实现正则呢？有这么两个原因：</p>
+<ol>
+<li>NFA可以保留正则表达式的结构，实现捕获组等特性需要。</li>
+<li>DFA构造，最小化时间复杂度高，占用空间大（极限情况是NFA子集数量的节点数）。</li>
+</ol>
+<p>Java原生Pattern的实现，是直接将输入字符串编译成NFA结构，匹配时用回溯的方式进行深度优先遍历（书里是广度优先遍历，每一步计算出集合所有元素）</p>
+<p>完整代码放到了我的github上：</p>
+<p><a href="https://github.com/koshox/understanding-computation-java" target="_blank" rel="noopener">https://github.com/koshox/understanding-computation-java</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Java/" rel="tag"># Java</a>
+          
+            <a href="/tags/DFA/" rel="tag"># DFA</a>
+          
+            <a href="/tags/NFA/" rel="tag"># NFA</a>
+          
+            <a href="/tags/正则表达式/" rel="tag"># 正则表达式</a>
+          
+            <a href="/tags/读书笔记/" rel="tag"># 读书笔记</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/03/23/a-unique-singleton-parttern/" rel="next" title="一种独特的单例模式写法，利用final语义实现">
+                <i class="fa fa-chevron-left"></i> 一种独特的单例模式写法，利用final语义实现
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2021/09/08/ssql-1-sql-parser/" rel="prev" title="SSQL(Simle-SQL)框架 1.SQL语法解析和自定义SPI">
+                SSQL(Simle-SQL)框架 1.SQL语法解析和自定义SPI <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+        <div id="gitment-container"></div>
+      
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="Kosho">
+            
+              <p class="site-author-name" itemprop="name">Kosho</p>
+              <p class="site-description motion-element" itemprop="description">计算机领域没有什么事是一层中间层解决不了的，如果有，那就两层</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">10</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">7</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/koshox" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:215501998@qq.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/zi-chuan-98-16/activities" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-gratipay"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.douban.com/people/kosho" target="_blank" title="豆瓣">
+                      
+                        <i class="fa fa-fw fa-book"></i>豆瓣</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#DFA（确定性有限自动机）"><span class="nav-number">1.</span> <span class="nav-text">DFA（确定性有限自动机）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#确定性"><span class="nav-number">1.1.</span> <span class="nav-text">确定性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#代码模拟"><span class="nav-number">1.2.</span> <span class="nav-text">代码模拟</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#NFA（非确定性有限自动机）"><span class="nav-number">2.</span> <span class="nav-text">NFA（非确定性有限自动机）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#非确定性"><span class="nav-number">2.1.</span> <span class="nav-text">非确定性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#代码模拟-1"><span class="nav-number">2.2.</span> <span class="nav-text">代码模拟</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#正则表达式"><span class="nav-number">3.</span> <span class="nav-text">正则表达式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#连接操作转换NFA"><span class="nav-number">3.1.</span> <span class="nav-text">连接操作转换NFA</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#选择操作转换NFA"><span class="nav-number">3.2.</span> <span class="nav-text">选择操作转换NFA</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#重复操作转换NFA"><span class="nav-number">3.3.</span> <span class="nav-text">重复操作转换NFA</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#正则语法树解析"><span class="nav-number">3.4.</span> <span class="nav-text">正则语法树解析</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#等价性"><span class="nav-number">4.</span> <span class="nav-text">等价性</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Kosho</span>
+
+  
+</div>
+
+<!--
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+-->
+
+
+  <div class="footer-custom">不如现在出发</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+<!-- LOCAL: You can save these files to your site and update links -->
+    
+        
+        <link rel="stylesheet" href="https://aimingoo.github.io/gitmint/style/default.css">
+        <script src="https://aimingoo.github.io/gitmint/dist/gitmint.browser.js"></script>
+    
+<!-- END LOCAL -->
+
+    
+      <style>
+        a.gitment-editor-footer-tip { display: none; }
+        .gitment-container.gitment-footer-container { display: none; }
+      </style>
+    
+
+    
+      <script type="text/javascript">
+      function renderGitment(){
+        var gitment = new Gitmint({
+            id: window.location.pathname, 
+            owner: 'koshox',
+            repo: 'koshox.github.io',
+            
+            lang: "" || navigator.language || navigator.systemLanguage || navigator.userLanguage,
+            
+            oauth: {
+            
+            
+                client_secret: '97f010895abf50a221ffb6c412a6bc51af94a439',
+            
+                client_id: '0257bbdc7139f789e280'
+            }});
+        gitment.render('gitment-container');
+      }
+
+      
+      renderGitment();
+      
+      </script>
+    
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

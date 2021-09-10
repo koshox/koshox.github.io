@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-kosho.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-kosho.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="SQL解析,SPI,编译原理,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="SSQL(Simle-SQL)是SQL-Like语法的一个数据查询、操作框架，使用Java实现，主要目标是屏蔽不同数据源的差异，能够使用同一套SQL语法操作不同的数据源。这篇文章的内容是ssql-core模块的实现，主要是SSQL语法解析和自定义SPI模块。 完整代码放在我的Github上：https://github.com/koshox/ssql">
+<meta name="keywords" content="SQL解析,SPI,编译原理">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SSQL(Simle-SQL)框架 1.SQL语法解析和自定义SPI">
+<meta property="og:url" content="http://kosho.tech/2021/09/08/ssql-1-sql-parser/index.html">
+<meta property="og:site_name" content="Kosho&#39;s blog">
+<meta property="og:description" content="SSQL(Simle-SQL)是SQL-Like语法的一个数据查询、操作框架，使用Java实现，主要目标是屏蔽不同数据源的差异，能够使用同一套SQL语法操作不同的数据源。这篇文章的内容是ssql-core模块的实现，主要是SSQL语法解析和自定义SPI模块。 完整代码放在我的Github上：https://github.com/koshox/ssql">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://media.kosho.tech/blog/ssql/ssql-ast.png">
+<meta property="og:updated_time" content="2021-09-10T17:03:20.550Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SSQL(Simle-SQL)框架 1.SQL语法解析和自定义SPI">
+<meta name="twitter:description" content="SSQL(Simle-SQL)是SQL-Like语法的一个数据查询、操作框架，使用Java实现，主要目标是屏蔽不同数据源的差异，能够使用同一套SQL语法操作不同的数据源。这篇文章的内容是ssql-core模块的实现，主要是SSQL语法解析和自定义SPI模块。 完整代码放在我的Github上：https://github.com/koshox/ssql">
+<meta name="twitter:image" content="http://media.kosho.tech/blog/ssql/ssql-ast.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://kosho.tech/2021/09/08/ssql-1-sql-parser/">
+
+
+
+
+
+  <title>SSQL(Simle-SQL)框架 1.SQL语法解析和自定义SPI | Kosho's blog</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2c1cf72231a432b1f23daf411f245e18";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Kosho's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">计算机领域没有什么事是一层中间层解决不了的，如果有，那就两层</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://kosho.tech/2021/09/08/ssql-1-sql-parser/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Kosho">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Kosho's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">SSQL(Simle-SQL)框架 1.SQL语法解析和自定义SPI</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-09-08T22:21:17+08:00">
+                2021-09-08
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/数据库/" itemprop="url" rel="index">
+                    <span itemprop="name">数据库</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2021/09/08/ssql-1-sql-parser/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count gitment-comments-count" data-xid="/2021/09/08/ssql-1-sql-parser/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  2.7k
+                </span>
+              
+
+              
+
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>SSQL(Simle-SQL)是SQL-Like语法的一个数据查询、操作框架，使用Java实现，主要目标是屏蔽不同数据源的差异，能够使用同一套SQL语法操作不同的数据源。这篇文章的内容是ssql-core模块的实现，主要是SSQL语法解析和自定义SPI模块。</p>
+<p>完整代码放在我的Github上：<a href="https://github.com/koshox/ssql" target="_blank" rel="noopener">https://github.com/koshox/ssql</a></p>
+<a id="more"></a>
+
+<h2 id="SQL语法解析"><a href="#SQL语法解析" class="headerlink" title="SQL语法解析"></a>SQL语法解析</h2><p>SQL的语法解析和C、Java这些语言的解析没有本质区别，但是相对比较简单。都会经过词法分析、语法分析、语义分析、中间代码生成、优化、目标代码生成这几个阶段。</p>
+<p>SQL语法解析一般有这么几个方式：</p>
+<ol>
+<li>直接使用已有的库，比如Druid，但是不好定制和扩展。</li>
+<li>手写递归下降解析器、解析器组合子。</li>
+<li>使用ANTLR，JavaCC这样的工具来帮助我们生成语法解析代码。</li>
+</ol>
+<p>出于简单和可扩展的两个角度，我们使用<a href="https://www.antlr.org" target="_blank" rel="noopener">ANTLR</a>来做词法和语法分析，Hibernate、Spark、ShardingSphere等项目也都使用了ANTLR。只需要编写EBNF的语法文件就可以了，ANTLR会基于语法文件生成LL(k)的语法解析器。</p>
+<h3 id="词法分析"><a href="#词法分析" class="headerlink" title="词法分析"></a>词法分析</h3><p>词法分析就是做分词，把输入转换为Token流，比如select * from t_user，会被转换为select，*，from，t_user。</p>
+<p>ANTLR的lexer很简单，基本就是简单的正则表达式语法。为了控制篇幅用……省略一些重复的内容，如果感兴趣可以看<a href="https://github.com/koshox/ssql" target="_blank" rel="noopener">github上的完整实现</a>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line">lexer grammar SsqlLexer;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 生成代码包路径</span></span><br><span class="line"><span class="meta">@header</span> &#123;<span class="keyword">package</span> com.kosho.ssql.core.dsl.parser;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 跳过空格和注释</span></span><br><span class="line">SPACE: [ \t\r\n]+ -&gt; channel(HIDDEN);</span><br><span class="line">COMMENT: <span class="string">'/*'</span> .*? <span class="string">'*/'</span> -&gt; channel(HIDDEN);</span><br><span class="line">LINE_COMMENT: (</span><br><span class="line">                  (<span class="string">'-- '</span> | <span class="string">'#'</span>) ~[\r\n]* (<span class="string">'\r'</span>? <span class="string">'\n'</span> | EOF)</span><br><span class="line">                  | <span class="string">'--'</span> (<span class="string">'\r'</span>? <span class="string">'\n'</span> | EOF)</span><br><span class="line">              ) -&gt; channel(HIDDEN);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 关键字</span></span><br><span class="line">SELECT: S E L E C T;</span><br><span class="line">FROM: F R O M;</span><br><span class="line">WHERE: W H E R E;</span><br><span class="line">ORDER: O R D E R;</span><br><span class="line">GROUP: G R O U P;</span><br><span class="line">HAVING: H A V I N G;</span><br><span class="line"></span><br><span class="line">BY: B Y;</span><br><span class="line">AS: A S;</span><br><span class="line">AND: A N D;</span><br><span class="line">OR: O R;</span><br><span class="line">......</span><br><span class="line"></span><br><span class="line"><span class="comment">// 操作符</span></span><br><span class="line">STAR: <span class="string">'*'</span>;</span><br><span class="line">DIV: <span class="string">'/'</span>;</span><br><span class="line">MOD: <span class="string">'%'</span>;</span><br><span class="line">PLUS: <span class="string">'+'</span>;</span><br><span class="line">EQ: <span class="string">'='</span>;</span><br><span class="line">GT: <span class="string">'&gt;'</span>;</span><br><span class="line">LT: <span class="string">'&lt;'</span>;</span><br><span class="line">.....</span><br><span class="line"></span><br><span class="line"><span class="comment">// 字符串</span></span><br><span class="line">SQUOTE_STRING: <span class="string">'\''</span> (<span class="string">'\\'</span>. | <span class="string">'\'\''</span> | ~(<span class="string">'\''</span> | <span class="string">'\\'</span>))* <span class="string">'\''</span>;</span><br><span class="line">DQUOTE_STRING: <span class="string">'"'</span> (<span class="string">'\\'</span>. | <span class="string">'""'</span> | ~(<span class="string">'"'</span> | <span class="string">'\\'</span>))* <span class="string">'"'</span>;</span><br><span class="line">RQUOTE_STRING: <span class="string">'`'</span> (<span class="string">'\\'</span>. | <span class="string">'``'</span> | ~(<span class="string">'`'</span> | <span class="string">'\\'</span>))* <span class="string">'`'</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 数字</span></span><br><span class="line">INTEGER: DEG_DIGIT+;</span><br><span class="line">DECIMAL: (<span class="string">'0'</span> | [<span class="number">1</span>-<span class="number">9</span>] DEG_DIGIT*) (DOT DEG_DIGIT+)? ([eE] [+\-]? DEG_DIGIT+)?;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 标识符</span></span><br><span class="line">ID: [a-zA-Z0-<span class="number">9</span>_]*? [a-zA-Z_]+? [a-zA-Z0-<span class="number">9</span>_]*;</span><br><span class="line"></span><br><span class="line"><span class="comment">// FRAGMENT</span></span><br><span class="line">fragment A: [aA];</span><br><span class="line">fragment B: [bB];</span><br><span class="line">fragment C: [cC];</span><br><span class="line">......</span><br><span class="line"></span><br><span class="line">fragment DEG_DIGIT: [<span class="number">0</span>-<span class="number">9</span>];</span><br></pre></td></tr></table></figure>
+
+<p>然后使用ANTLR的jar或者idea插件就可以生成词法解析器Java文件。</p>
+<h3 id="语法分析"><a href="#语法分析" class="headerlink" title="语法分析"></a>语法分析</h3><p>SSQL目前主要是支持查询语句，主要语法树如下：</p>
+<p><img src="http://media.kosho.tech/blog/ssql/ssql-ast.png" alt="SSQL AST"></p>
+<p>语法分析器可以引用上面的Lexer，并针对select，from等子句依次编写语法，ANTLR会对每一个分支都生成对应的语法树和监听/遍历方法。使用#可以进行标记，以生成更精确的方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line">parser grammar SsqlParser;</span><br><span class="line"></span><br><span class="line"><span class="meta">@header</span> &#123;<span class="keyword">package</span> com.kosho.ssql.core.dsl.parser;&#125;</span><br><span class="line"></span><br><span class="line">options &#123;</span><br><span class="line">    tokenVocab=SsqlLexer;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// ROOT节点</span></span><br><span class="line">ssql: selectStatement SEMI? EOF;</span><br><span class="line"></span><br><span class="line"><span class="comment">// SELECT语句</span></span><br><span class="line">selectStatement</span><br><span class="line">    : selectClause fromClause whereClause? groupByClause? orderByClause? limitClause?</span><br><span class="line"></span><br><span class="line"><span class="comment">// SELECT</span></span><br><span class="line">selectStatement</span><br><span class="line">    : selectClause fromClause whereClause? groupByClause? orderByClause? limitClause? #simpleSelectStatement</span><br><span class="line">    | LBKT selectStatement RBKT                                                       #bracketedSelectStatement;</span><br><span class="line"></span><br><span class="line">selectClause: SELECT DISTINCT? selectColumns;</span><br><span class="line"></span><br><span class="line">selectColumns</span><br><span class="line">    : STAR                               #selectAll</span><br><span class="line">    | selectColumn (COMMA selectColumn)* #selectSpecialColumns</span><br><span class="line">    ;</span><br><span class="line"></span><br><span class="line"><span class="comment">// FROM</span></span><br><span class="line">fromClause: FROM tableRefs;</span><br><span class="line">tableRefs: tableRef (COMMA tableRef)?;</span><br><span class="line">tableRef: table=identifierValue (AS? alias=identifierValue)?;</span><br><span class="line"></span><br><span class="line"><span class="comment">// WHERE</span></span><br><span class="line">whereClause: WHERE expression;</span><br><span class="line"></span><br><span class="line">expression</span><br><span class="line">    : left=expression operator=AND right=expression #logicExpr</span><br><span class="line">    | left=expression operator=OR right=expression  #logicExpr</span><br><span class="line">    | LBKT expression RBKT                          #bracketedExpr</span><br><span class="line">    | predicateExpr                                 #predicatedExpr</span><br><span class="line">    ;</span><br><span class="line"></span><br><span class="line">predicateExpr</span><br><span class="line">    : fieldAtom IS NOT? NULL                 #isNullPredicate</span><br><span class="line">    | fieldAtom comparisonOperator valueAtom #binaryComparisonPredicate</span><br><span class="line">    | <span class="function">fieldAtom <span class="title">IN</span> <span class="params">(listValue | varValue)</span>    #inPredicate</span></span><br><span class="line"><span class="function">    </span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// GROUP BY</span></span><br><span class="line">groupByClause: <span class="function">GROUP BY <span class="title">valueAtom</span> <span class="params">(COMMA valueAtom)</span>* havingClause?</span>;</span><br><span class="line"></span><br><span class="line">......</span><br><span class="line"></span><br><span class="line">identifierValue: ID | DQUOTE_STRING;</span><br><span class="line">constant: NULL | stringLiteral | numberLiteral | booleanLiteral;</span><br><span class="line">stringLiteral: SQUOTE_STRING;</span><br><span class="line">numberLiteral: MINUS? literal=INTEGER | MINUS? literal=DECIMAL;</span><br><span class="line">booleanLiteral: TRUE | FALSE;</span><br><span class="line">comparisonOperator: EQ | GT | GTE | LT | LTE | LT GT | NOT_EQ | IS | IS NOT;</span><br></pre></td></tr></table></figure>
+
+<p>到这一步生成的语法解析器已经能够把SSQL语句解析成语法树了，可以使用idea的ANTLR插件调试语法规则。</p>
+<h3 id="中间代码生成"><a href="#中间代码生成" class="headerlink" title="中间代码生成"></a>中间代码生成</h3><p>上一步ANTLR生成的语法树不够直观，想生成更加简洁的中间表示，即SSQL对象。后续的其他数据源语法转换、分库分表，也会更加方便。</p>
+<p>ANTLR提供了Listener和Visitor两种方式遍历生成的语法树，Listener更简单，Visitor更适合复杂一定的树形结构，这里使用Visitor模式进行遍历和中间代码生成，直接继承上一步生成的SsqlParserBaseVisitor类即可。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SsqlAstVisitor</span> <span class="keyword">extends</span> <span class="title">SsqlParserBaseVisitor</span>&lt;<span class="title">Object</span>&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> SsqlAstVisitor INSTANCE = <span class="keyword">new</span> SsqlAstVisitor();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 遍历root节点</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">visitSsql</span><span class="params">(SsqlParser.SsqlContext ctx)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> visit(ctx.selectStatement());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 遍历select语句</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">visitSimpleSelectStatement</span><span class="params">(SsqlParser.SimpleSelectStatementContext ctx)</span> </span>&#123;</span><br><span class="line">        Ssql ssql = <span class="keyword">new</span> Ssql();</span><br><span class="line">        <span class="keyword">if</span> (ctx.selectClause() != <span class="keyword">null</span>) &#123;</span><br><span class="line">            ssql.setSelect((Select) visitSelectClause(ctx.selectClause()));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (ctx.fromClause() != <span class="keyword">null</span>) &#123;</span><br><span class="line">            ssql.setFrom((From) visitFromClause(ctx.fromClause()));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (ctx.whereClause() != <span class="keyword">null</span>) &#123;</span><br><span class="line">            ssql.setWhere((Where) visitWhereClause(ctx.whereClause()));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (ctx.groupByClause() != <span class="keyword">null</span>) &#123;</span><br><span class="line">            ssql.setGroupBy((GroupBy) visitGroupByClause(ctx.groupByClause()));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (ctx.orderByClause() != <span class="keyword">null</span>) &#123;</span><br><span class="line">            ssql.setOrderBy((OrderBy) visitOrderByClause(ctx.orderByClause()));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (ctx.limitClause() != <span class="keyword">null</span>) &#123;</span><br><span class="line">            ssql.setLimit((Limit) visitLimitClause(ctx.limitClause()));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> ssql;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 遍历select子句</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">visitSelectClause</span><span class="params">(SsqlParser.SelectClauseContext ctx)</span> </span>&#123;</span><br><span class="line">        Select select = <span class="keyword">new</span> Select();</span><br><span class="line">        <span class="keyword">if</span> (ctx.DISTINCT() != <span class="keyword">null</span>) &#123;</span><br><span class="line">            select.setDistinct(<span class="keyword">true</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        Object selects = visit(ctx.selectColumns());</span><br><span class="line">        <span class="keyword">if</span> (selects <span class="keyword">instanceof</span> String) &#123;</span><br><span class="line">            select.setStar(<span class="keyword">true</span>);</span><br><span class="line">            <span class="keyword">return</span> select;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        select.setSelectItems((List&lt;SelectItem&gt;) selects);</span><br><span class="line">        <span class="keyword">return</span> select;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">visitSelectAll</span><span class="params">(SsqlParser.SelectAllContext ctx)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"*"</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">visitSelectSpecialColumns</span><span class="params">(SsqlParser.SelectSpecialColumnsContext ctx)</span> </span>&#123;</span><br><span class="line">        List&lt;SelectItem&gt; selectItems = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">        <span class="keyword">for</span> (SsqlParser.SelectColumnContext column : ctx.selectColumn()) &#123;</span><br><span class="line">            SelectItem selectItem = (SelectItem) visitSelectColumn(column);</span><br><span class="line">            selectItems.add(selectItem);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> selectItems;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">visitSelectColumn</span><span class="params">(SsqlParser.SelectColumnContext ctx)</span> </span>&#123;</span><br><span class="line">        SelectItem selectItem = <span class="keyword">new</span> SelectItem();</span><br><span class="line">        selectItem.setField((Value) visit(ctx.column));</span><br><span class="line">        <span class="keyword">if</span> (ctx.alias != <span class="keyword">null</span>) &#123;</span><br><span class="line">            String alias = visit(ctx.alias).toString();</span><br><span class="line">            selectItem.setAlias(alias);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> selectItem;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 遍历from子句</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">visitFromClause</span><span class="params">(SsqlParser.FromClauseContext ctx)</span> </span>&#123;</span><br><span class="line">        From from = <span class="keyword">new</span> From();</span><br><span class="line">        from.setTables((List&lt;Table&gt;) visitTableRefs(ctx.tableRefs()));</span><br><span class="line">        <span class="keyword">return</span> from;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">visitTableRefs</span><span class="params">(SsqlParser.TableRefsContext ctx)</span> </span>&#123;</span><br><span class="line">        ArrayList&lt;Table&gt; tables = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">        <span class="keyword">for</span> (SsqlParser.TableRefContext tableRefContext : ctx.tableRef()) &#123;</span><br><span class="line">            tables.add((Table) visitTableRef(tableRefContext));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> tables;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">visitTableRef</span><span class="params">(SsqlParser.TableRefContext ctx)</span> </span>&#123;</span><br><span class="line">        Table table = <span class="keyword">new</span> Table();</span><br><span class="line">        table.setName(visit(ctx.table).toString());</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (ctx.alias != <span class="keyword">null</span>) &#123;</span><br><span class="line">            table.setAlias(visit(ctx.alias).toString());</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> table;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">	......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>随后我们给Ssql加上编译方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Ssql <span class="title">compile</span><span class="params">(String ssqlStr)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 词法解析器</span></span><br><span class="line">    SsqlLexer lexer = <span class="keyword">new</span> SsqlLexer(CharStreams.fromString(ssqlStr));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 语法解析器</span></span><br><span class="line">    SsqlParser parser = <span class="keyword">new</span> SsqlParser(<span class="keyword">new</span> CommonTokenStream(lexer));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 异常监听器</span></span><br><span class="line">    parser.addErrorListener(SsqlErrorListener.INSTANCE);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 语法树生成</span></span><br><span class="line">    SsqlParser.SsqlContext context = parser.ssql();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 语法树遍历</span></span><br><span class="line">    <span class="keyword">return</span> (Ssql) SsqlAstVisitor.INSTANCE.visit(context);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>至此，已经支持将表达式编译为Ssql对象了</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 表达式编译为SSQL语法树</span></span><br><span class="line">Ssql ssql = Ssql.compile(<span class="string">"select * from t_user order by name"</span>);<span class="comment">// select * from t_user order by name</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 参数化编译</span></span><br><span class="line">Map&lt;String, Object&gt; params = <span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">params.put(<span class="string">"name"</span>, <span class="string">"kosho"</span>);</span><br><span class="line">params.put(<span class="string">"age"</span>, <span class="number">25</span>);</span><br><span class="line">Ssql ssql = Ssql.compile(<span class="string">"select * from t_user where name = $name and age = $age"</span>); <span class="comment">// select * from t_user where name = 'kosho' and age = 25</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="自定义SPI实现"><a href="#自定义SPI实现" class="headerlink" title="自定义SPI实现"></a>自定义SPI实现</h2><p>Java的SPI(Service Provider Interface)机制大家应该都不陌生，它是Java提供的一种服务扩展机制。像JDBC，SLF4J，Dubbo，Seata都用到了SPI的机制来加载组件。</p>
+<p>Java原生的SPI有一些缺点：</p>
+<ol>
+<li>默认实例化所有的SPI实现，无法按需加载，导致资源浪费</li>
+<li>没有优先级，按名称加载这些功能，不够易用</li>
+</ol>
+<p>所以很多框架都实现了自己的SPI机制，Dubbo的SPI就做的功能很强大（复杂），还基于javassist做了支持URL自适应的能力。</p>
+<p>SSQL也使用SPI扩展组件（后续分表算法，语法树改写都会用到），并开发了一套自定义SPI实现。大概100多行代码就能实现一个支持优先级、名称、单/多例的一个SPI模块。</p>
+<p>首先我们先定义SPI注解，作为辅助扩展。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Retention</span>(RetentionPolicy.RUNTIME)</span><br><span class="line"><span class="meta">@Target</span>(ElementType.TYPE)</span><br><span class="line"><span class="meta">@Documented</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> Spi &#123;</span><br><span class="line">    <span class="comment">// SPI名称</span></span><br><span class="line">    <span class="function">String <span class="title">value</span><span class="params">()</span> <span class="keyword">default</span> ""</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 是否单例</span></span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">isSingleton</span><span class="params">()</span> <span class="keyword">default</span> <span class="keyword">true</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 是否默认</span></span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">isDefault</span><span class="params">()</span> <span class="keyword">default</span> <span class="keyword">false</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 优先级</span></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">order</span><span class="params">()</span> <span class="keyword">default</span> 0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 最高优先级</span></span><br><span class="line">    <span class="keyword">int</span> ORDER_HIGHEST = Integer.MIN_VALUE;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 最低优先级</span></span><br><span class="line">    <span class="keyword">int</span> ORDER_LOWEST = Integer.MAX_VALUE;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后编写SPI加载器，主要就是加载META-INF/services下的SPI配置</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SpiLoader</span>&lt;<span class="title">S</span>&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String SPI_CFG_PREFIX = <span class="string">"META-INF/services/"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Map&lt;String, SpiLoader&gt; SPI_LOADERS = <span class="keyword">new</span> ConcurrentHashMap&lt;&gt;();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> List&lt;Class&lt;? extends S&gt;&gt; classList = Collections.synchronizedList(<span class="keyword">new</span> ArrayList&lt;&gt;());</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ConcurrentHashMap&lt;String, Class&lt;? extends S&gt;&gt; spiName2Class = <span class="keyword">new</span> ConcurrentHashMap&lt;&gt;();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ConcurrentHashMap&lt;String, S&gt; className2Singleton = <span class="keyword">new</span> ConcurrentHashMap&lt;&gt;();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> AtomicBoolean loaded = <span class="keyword">new</span> AtomicBoolean(<span class="keyword">false</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Class&lt;? extends S&gt; defaultClass = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Class&lt;S&gt; service;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="title">SpiLoader</span><span class="params">(Class&lt;S&gt; service)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.service = service;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 创建SPI加载器</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> service SPI接口</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> &lt;T&gt;     SPI泛型</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> SPI加载器</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; <span class="function">SpiLoader&lt;T&gt; <span class="title">of</span><span class="params">(Class&lt;T&gt; service)</span> </span>&#123;</span><br><span class="line">        Validate.notNull(service, <span class="string">"Spi class cannot be null"</span>);</span><br><span class="line">        Validate.isTrue(service.isInterface(), <span class="string">"Spi class["</span> + service.getName() + <span class="string">"] must be interface"</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> SPI_LOADERS.computeIfAbsent(service.getName(), key -&gt; <span class="keyword">new</span> SpiLoader(service));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 按照名称加载SPI实现</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> name SPI名称</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> SPI impl</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> S <span class="title">load</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">        Validate.notEmpty(name, <span class="string">"SPI name cannot be empty"</span>);</span><br><span class="line"></span><br><span class="line">        load();</span><br><span class="line"></span><br><span class="line">        Class&lt;? extends S&gt; clazz = spiName2Class.get(name);</span><br><span class="line">        <span class="keyword">if</span> (clazz == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> SsqlException(<span class="string">"no Provider class's aliasName is "</span> + name);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> createInstance(clazz);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 加载默认SPI实现</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> default SPI impl</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> S <span class="title">loadDefault</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        load();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (defaultClass == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> createInstance(defaultClass);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 加载优先级最高的SPI实现</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> SPI impl</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> S <span class="title">loadHighestPriority</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        load();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (classList.isEmpty()) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> createInstance(classList.get(<span class="number">0</span>));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 加载所有SPI实现</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> SPI impl list</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> List&lt;S&gt; <span class="title">loadAll</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        load();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> createInstances(classList);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">load</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (!loaded.compareAndSet(<span class="keyword">false</span>, <span class="keyword">true</span>)) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        String fullFileName = SPI_CFG_PREFIX + service.getName();</span><br><span class="line">        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();</span><br><span class="line">        <span class="keyword">if</span> (classLoader == <span class="keyword">null</span>) &#123;</span><br><span class="line">            classLoader = ClassLoader.getSystemClassLoader();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        Enumeration&lt;URL&gt; urls;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            urls = classLoader.getResources(fullFileName);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> SsqlException(<span class="string">"Error locating SPI configuration file, filename="</span> + fullFileName + <span class="string">", classloader="</span> + classLoader, e);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (urls == <span class="keyword">null</span> || !urls.hasMoreElements()) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">while</span> (urls.hasMoreElements()) &#123;</span><br><span class="line">            URL url = urls.nextElement();</span><br><span class="line">            <span class="keyword">try</span> (InputStream in = url.openStream();</span><br><span class="line">                 BufferedReader br = <span class="keyword">new</span> BufferedReader(<span class="keyword">new</span> InputStreamReader(in, StandardCharsets.UTF_8))) &#123;</span><br><span class="line">                String line;</span><br><span class="line">                <span class="keyword">while</span> ((line = br.readLine()) != <span class="keyword">null</span>) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (StringUtils.isBlank(line)) &#123;</span><br><span class="line">                        <span class="keyword">continue</span>;</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    line = line.trim();</span><br><span class="line">                    <span class="keyword">int</span> commentIndex = line.indexOf(<span class="string">"#"</span>);</span><br><span class="line">                    <span class="keyword">if</span> (commentIndex == <span class="number">0</span>) &#123;</span><br><span class="line">                        <span class="comment">// 跳过注释</span></span><br><span class="line">                        <span class="keyword">continue</span>;</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">if</span> (commentIndex &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                        line = line.substring(<span class="number">0</span>, commentIndex);</span><br><span class="line">                        line = line.trim();</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    load(classLoader, line, fullFileName);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> SsqlException(<span class="string">"error reading SPI configuration file"</span>, e);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        classList.sort((class1, class2) -&gt; &#123;</span><br><span class="line">            Spi spi1 = class1.getAnnotation(Spi.class);</span><br><span class="line">            <span class="keyword">int</span> order1 = spi1 == <span class="keyword">null</span> ? <span class="number">0</span> : spi1.order();</span><br><span class="line"></span><br><span class="line">            Spi spi2 = class2.getAnnotation(Spi.class);</span><br><span class="line">            <span class="keyword">int</span> order2 = spi2 == <span class="keyword">null</span> ? <span class="number">0</span> : spi2.order();</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> Integer.compare(order1, order2);</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">load</span><span class="params">(ClassLoader classLoader, String implClazzName, String fullFileName)</span> </span>&#123;</span><br><span class="line">        Class&lt;S&gt; clazz;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            clazz = (Class&lt;S&gt;) Class.forName(implClazzName, <span class="keyword">false</span>, classLoader);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (ClassNotFoundException e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> SsqlException(<span class="string">"class "</span> + implClazzName + <span class="string">" not found"</span>, e);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (!service.isAssignableFrom(clazz)) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> SsqlException(<span class="string">"class "</span> + clazz.getName() + <span class="string">"is not implement of "</span> + service.getName() + <span class="string">", SPI configuration file="</span> + fullFileName);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        classList.add(clazz);</span><br><span class="line">        Spi spi = clazz.getAnnotation(Spi.class);</span><br><span class="line">        String spiName = (spi == <span class="keyword">null</span> || StringUtils.isEmpty(spi.value()))</span><br><span class="line">                ? clazz.getName()</span><br><span class="line">                : spi.value();</span><br><span class="line">        <span class="keyword">if</span> (spiName2Class.containsKey(spiName)) &#123;</span><br><span class="line">            Class&lt;? extends S&gt; existClass = spiName2Class.get(spiName);</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> SsqlException(<span class="string">"Found repeat SPI name for "</span> + clazz.getName() + <span class="string">" and "</span></span><br><span class="line">                    + existClass.getName() + <span class="string">",SPI configuration file="</span> + fullFileName);</span><br><span class="line">        &#125;</span><br><span class="line">        spiName2Class.put(spiName, clazz);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (spi != <span class="keyword">null</span> &amp;&amp; spi.isDefault()) &#123;</span><br><span class="line">            <span class="keyword">if</span> (defaultClass != <span class="keyword">null</span>) &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> SsqlException(<span class="string">"Found more than one default Provider, SPI configuration file="</span> + fullFileName);</span><br><span class="line">            &#125;</span><br><span class="line">            defaultClass = clazz;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> List&lt;S&gt; <span class="title">createInstances</span><span class="params">(List&lt;Class&lt;? extends S&gt;&gt; clazzList)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (CollectionUtils.isEmpty(clazzList)) &#123;</span><br><span class="line">            <span class="keyword">return</span> Collections.emptyList();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> clazzList.stream().map(<span class="keyword">this</span>::createInstance).collect(Collectors.toList());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> S <span class="title">createInstance</span><span class="params">(Class&lt;? extends S&gt; clazz)</span> </span>&#123;</span><br><span class="line">        Spi spi = clazz.getAnnotation(Spi.class);</span><br><span class="line">        <span class="keyword">boolean</span> singleton = spi == <span class="keyword">null</span> || spi.isSingleton();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (!singleton) &#123;</span><br><span class="line">            <span class="keyword">return</span> createInstance0(clazz);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> className2Singleton.computeIfAbsent(clazz.getName(), key -&gt; createInstance0(clazz));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> S <span class="title">createInstance0</span><span class="params">(Class&lt;? extends S&gt; clazz)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> service.cast(clazz.newInstance());</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> SsqlException(clazz.getName() + <span class="string">" could not be instantiated"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>核心代码100行不到，我们就实现了一个功能强大的SPI，简单测试一下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Foo</span> </span>&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Spi</span>(order = Spi.ORDER_HIGHEST)</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">FooImpl1</span> <span class="keyword">implements</span> <span class="title">Foo</span> </span>&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Spi</span>(isDefault = <span class="keyword">true</span>, order = -<span class="number">10</span>)</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">FooImpl2</span> <span class="keyword">implements</span> <span class="title">Foo</span> </span>&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Spi</span>(value = <span class="string">"foo3"</span>, isSingleton = <span class="keyword">false</span>)</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">FooImpl3</span> <span class="keyword">implements</span> <span class="title">Foo</span> </span>&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">SpiLoaderTest</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">testLoadInstance</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Foo foo = SpiLoader.of(Foo.class).load(<span class="string">"foo3"</span>);</span><br><span class="line">        Assert.assertTrue(foo <span class="keyword">instanceof</span> FooImpl3);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">testLoadDefaultInstance</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Foo foo = SpiLoader.of(Foo.class).loadDefault();</span><br><span class="line">        Assert.assertTrue(foo <span class="keyword">instanceof</span> FooImpl2);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">testLoadInstanceByPriority</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Foo foo = SpiLoader.of(Foo.class).loadHighestPriority();</span><br><span class="line">        Assert.assertTrue(foo <span class="keyword">instanceof</span> FooImpl1);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">testLoadAllInstances</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        List&lt;Foo&gt; foos = SpiLoader.of(Foo.class).loadAll();</span><br><span class="line">        Assert.assertEquals(<span class="number">3</span>, foos.size());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/SQL解析/" rel="tag"># SQL解析</a>
+          
+            <a href="/tags/SPI/" rel="tag"># SPI</a>
+          
+            <a href="/tags/编译原理/" rel="tag"># 编译原理</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/04/04/understanding-computation-one/" rel="next" title="计算的本质1 - 从自动机到正则表达式 Java实现">
+                <i class="fa fa-chevron-left"></i> 计算的本质1 - 从自动机到正则表达式 Java实现
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+        <div id="gitment-container"></div>
+      
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="Kosho">
+            
+              <p class="site-author-name" itemprop="name">Kosho</p>
+              <p class="site-description motion-element" itemprop="description">计算机领域没有什么事是一层中间层解决不了的，如果有，那就两层</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">10</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">7</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/koshox" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:215501998@qq.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/zi-chuan-98-16/activities" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-gratipay"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.douban.com/people/kosho" target="_blank" title="豆瓣">
+                      
+                        <i class="fa fa-fw fa-book"></i>豆瓣</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#SQL语法解析"><span class="nav-number">1.</span> <span class="nav-text">SQL语法解析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#词法分析"><span class="nav-number">1.1.</span> <span class="nav-text">词法分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#语法分析"><span class="nav-number">1.2.</span> <span class="nav-text">语法分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#中间代码生成"><span class="nav-number">1.3.</span> <span class="nav-text">中间代码生成</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#自定义SPI实现"><span class="nav-number">2.</span> <span class="nav-text">自定义SPI实现</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Kosho</span>
+
+  
+</div>
+
+<!--
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+-->
+
+
+  <div class="footer-custom">不如现在出发</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+<!-- LOCAL: You can save these files to your site and update links -->
+    
+        
+        <link rel="stylesheet" href="https://aimingoo.github.io/gitmint/style/default.css">
+        <script src="https://aimingoo.github.io/gitmint/dist/gitmint.browser.js"></script>
+    
+<!-- END LOCAL -->
+
+    
+      <style>
+        a.gitment-editor-footer-tip { display: none; }
+        .gitment-container.gitment-footer-container { display: none; }
+      </style>
+    
+
+    
+      <script type="text/javascript">
+      function renderGitment(){
+        var gitment = new Gitmint({
+            id: window.location.pathname, 
+            owner: 'koshox',
+            repo: 'koshox.github.io',
+            
+            lang: "" || navigator.language || navigator.systemLanguage || navigator.userLanguage,
+            
+            oauth: {
+            
+            
+                client_secret: '97f010895abf50a221ffb6c412a6bc51af94a439',
+            
+                client_id: '0257bbdc7139f789e280'
+            }});
+        gitment.render('gitment-container');
+      }
+
+      
+      renderGitment();
+      
+      </script>
+    
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-kosho.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-kosho.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Canal,负载均衡,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Canal是阿里巴巴的开源项目，基于MySQL Binlog解析，提供增量数据订阅和消费，是一个广泛使用的数据同步组件。我们的业务也大量使用了Canal，用于ES同步，业务消息通知等场景，分享一下自己的实践。">
+<meta name="keywords" content="Canal,负载均衡">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Canal的嵌入式使用与负载均衡改造">
+<meta property="og:url" content="http://kosho.tech/2019/10/08/canal-embedded-usage-and-consistency-hash-load-balancing/index.html">
+<meta property="og:site_name" content="Kosho&#39;s blog">
+<meta property="og:description" content="Canal是阿里巴巴的开源项目，基于MySQL Binlog解析，提供增量数据订阅和消费，是一个广泛使用的数据同步组件。我们的业务也大量使用了Canal，用于ES同步，业务消息通知等场景，分享一下自己的实践。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://media.kosho.tech/blog/20191013/canal-service.png">
+<meta property="og:image" content="http://media.kosho.tech/blog/20191013/canal-consistent-hashing2.png">
+<meta property="og:updated_time" content="2021-09-10T17:03:20.550Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Canal的嵌入式使用与负载均衡改造">
+<meta name="twitter:description" content="Canal是阿里巴巴的开源项目，基于MySQL Binlog解析，提供增量数据订阅和消费，是一个广泛使用的数据同步组件。我们的业务也大量使用了Canal，用于ES同步，业务消息通知等场景，分享一下自己的实践。">
+<meta name="twitter:image" content="http://media.kosho.tech/blog/20191013/canal-service.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://kosho.tech/2019/10/08/canal-embedded-usage-and-consistency-hash-load-balancing/">
+
+
+
+
+
+  <title>Canal的嵌入式使用与负载均衡改造 | Kosho's blog</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2c1cf72231a432b1f23daf411f245e18";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Kosho's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">计算机领域没有什么事是一层中间层解决不了的，如果有，那就两层</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://kosho.tech/2019/10/08/canal-embedded-usage-and-consistency-hash-load-balancing/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Kosho">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Kosho's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Canal的嵌入式使用与负载均衡改造</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-10-08T23:21:17+08:00">
+                2019-10-08
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/中间件/" itemprop="url" rel="index">
+                    <span itemprop="name">中间件</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/10/08/canal-embedded-usage-and-consistency-hash-load-balancing/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count gitment-comments-count" data-xid="/2019/10/08/canal-embedded-usage-and-consistency-hash-load-balancing/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  1k
+                </span>
+              
+
+              
+
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><a href="https://github.com/alibaba/canal" target="_blank" rel="noopener">Canal</a>是阿里巴巴的开源项目，基于MySQL Binlog解析，提供增量数据订阅和消费，是一个广泛使用的数据同步组件。我们的业务也大量使用了Canal，用于ES同步，业务消息通知等场景，分享一下自己的实践。</p>
+<a id="more"></a>
+
+<h2 id="直接部署Canal的方式遇到的问题"><a href="#直接部署Canal的方式遇到的问题" class="headerlink" title="直接部署Canal的方式遇到的问题"></a>直接部署Canal的方式遇到的问题</h2><p>开始我们按照通常做法，独立部署canal，使用client进行交互，这个过程遇到了一些问题。</p>
+<h3 id="运维，配置管理"><a href="#运维，配置管理" class="headerlink" title="运维，配置管理"></a>运维，配置管理</h3><p>项目环境比较多，每套环境多个租户（独立数据库），时常会新增租户和变更数据库。运维能力比较弱，经常配置不好Canal。我们的数据库配置是作为元数据管理的，就想把Canal集成到系统里，作为一个微服务运行。自动新增和启停instance。</p>
+<h3 id="缺少负载均衡机制"><a href="#缺少负载均衡机制" class="headerlink" title="缺少负载均衡机制"></a>缺少负载均衡机制</h3><p>Canal自身的HA机制基于zk节点抢占实现，没有实现负载均衡。同一套集群运行的instance多了，负载不均的问题就会比较明显，instance很容易都运行在一个节点，造成OOM等问题。<br>如果是直接部署的方式，server端可以手动配置分割为多个小集群，client端不行。既然已经用了嵌入式启动的方式，就只能自行实现负载均衡了。</p>
+<h3 id="性能"><a href="#性能" class="headerlink" title="性能"></a>性能</h3><p>使用CanalConnector需要多一次网络传输以及序列化，数据量比较大的场景会有性能上的问题，Embedded API就可以绕过这一步，带来比较大的性能提升。</p>
+<h2 id="扩展后的组件设计"><a href="#扩展后的组件设计" class="headerlink" title="扩展后的组件设计"></a>扩展后的组件设计</h2><p><img src="http://media.kosho.tech/blog/20191013/canal-service.png" alt="Canal service"></p>
+<ul>
+<li>Channel：在Instance上一层的数据同步通道，管理instance和consumer（poller）</li>
+<li>ChannelPipeline：数据同步流水线</li>
+<li>ChannelHandlers：数据处理handler链</li>
+<li>CanalInstanceCoordinator：负载均衡协调器，依赖zk和ConsistentHashingLoadBalancer进行负载均衡</li>
+<li>ConsistentHashingLoadBalancer：一致性Hash负载均衡</li>
+<li>SubscribeInfoLoad：加载数据订阅信息</li>
+<li>CanalController：同步服务控制器</li>
+</ul>
+<h2 id="Canal的嵌入式使用"><a href="#Canal的嵌入式使用" class="headerlink" title="Canal的嵌入式使用"></a>Canal的嵌入式使用</h2><h3 id="instance生成扩展"><a href="#instance生成扩展" class="headerlink" title="instance生成扩展"></a>instance生成扩展</h3><p>Canal默认的方式是扩展spring文件的方式来启动，用SpringCanalInstanceGenerator生成instance，对于每个instance配置文件，都初始化一个spring上下文来生成instance。<br>官方也有提到他们内部一般是用manager的方式接入，我们可以使用ManagerCanalInstanceGenerator，实现自己的CanalConfigClient加载数据库配置，或者实现自己的CanalInstanceGenerator扩展Canal实例生成机制。<br>同样，对于instance，可以直接使用CanalInstanceWithManager，或者自行继承AbstractCanalInstance拼接instance，可以加载自己的组件进去，比如说监控。</p>
+<h3 id="Embedded-API使用"><a href="#Embedded-API使用" class="headerlink" title="Embedded API使用"></a>Embedded API使用</h3><p>这时候就可以直接用CanalServerWithEmbedded.instance()获取嵌入式服务对象，来进行订阅消费操作了，与CanalConnector一样。</p>
+<h3 id="Embedded-Client"><a href="#Embedded-Client" class="headerlink" title="Embedded Client"></a>Embedded Client</h3><p>启动server以后，也要同步启动自己的client，我选择复用了ServerRunningMonitor，封装一个Channel对象（同步管道）来管理instance和client，在ServerRunningMonitor#start的时候启动整个channel。</p>
+<h2 id="基于一致性Hash的负载均衡"><a href="#基于一致性Hash的负载均衡" class="headerlink" title="基于一致性Hash的负载均衡"></a>基于一致性Hash的负载均衡</h2><h3 id="一致性Hash"><a href="#一致性Hash" class="headerlink" title="一致性Hash"></a>一致性Hash</h3><p>网上关于一致性Hash的文章很多，不再赘述它的概念。选用一致性hash作为负载均衡/HA的原因有这么几个：</p>
+<ol>
+<li>服务器不变动的情况下，同一个instance会负载分配到一个节点</li>
+<li>有节点上下线的情况下，可以让实例的变动尽可能的小</li>
+</ol>
+<p>注意使用带有虚拟节点的一致性hash，让instance分布更均衡些。</p>
+<p>直接上图，有Canal1，Canal2，Canal3三个Canal节点（每个节点有三个虚拟节点），10个instance按照一致性hash的方式负载到这三个节点上：<br><img src="http://media.kosho.tech/blog/20191013/canal-consistent-hashing2.png" alt="Canal consistent hashing"></p>
+<p>负载均衡状态：</p>
+<ul>
+<li>Canal1：instance7，instance8，instance9</li>
+<li>Canal2：instance2，instance3，instance6，instance10</li>
+<li>Canal3：instance1，instance4，instance5</li>
+</ul>
+<p>如果2节点下线，负载均衡状态变为：</p>
+<ul>
+<li>Canal1：instance3，instance7，instance8，instance9，instance10</li>
+<li>Canal3：instance1，instance2，instance4，instance5，instance6</li>
+</ul>
+<h3 id="实现思路"><a href="#实现思路" class="headerlink" title="实现思路"></a>实现思路</h3><ol>
+<li>Canal节点映射为n个虚拟节点，按照ip-port-seq进行hash，构建hash环，Java可以使用ConcurrentSkipList实现</li>
+<li>Instance按照name进行hash，映射到hash环上，分配给顺时针查找到的第一个节点</li>
+<li>监听zookeeper上Canal的cluster path，当有节点上下线，进行重分配</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Canal/" rel="tag"># Canal</a>
+          
+            <a href="/tags/负载均衡/" rel="tag"># 负载均衡</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/10/04/calculating-driving-distance-with-osm/" rel="next" title="使用OSM开源地图库计算多点间驾车距离">
+                <i class="fa fa-chevron-left"></i> 使用OSM开源地图库计算多点间驾车距离
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/02/06/tenant-isolation-of-middleware-and-database/" rel="prev" title="中间件、数据库的多租户设计">
+                中间件、数据库的多租户设计 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+        <div id="gitment-container"></div>
+      
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="Kosho">
+            
+              <p class="site-author-name" itemprop="name">Kosho</p>
+              <p class="site-description motion-element" itemprop="description">计算机领域没有什么事是一层中间层解决不了的，如果有，那就两层</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">10</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">7</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/koshox" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:215501998@qq.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/zi-chuan-98-16/activities" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-gratipay"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.douban.com/people/kosho" target="_blank" title="豆瓣">
+                      
+                        <i class="fa fa-fw fa-book"></i>豆瓣</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#直接部署Canal的方式遇到的问题"><span class="nav-number">1.</span> <span class="nav-text">直接部署Canal的方式遇到的问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#运维，配置管理"><span class="nav-number">1.1.</span> <span class="nav-text">运维，配置管理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#缺少负载均衡机制"><span class="nav-number">1.2.</span> <span class="nav-text">缺少负载均衡机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#性能"><span class="nav-number">1.3.</span> <span class="nav-text">性能</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#扩展后的组件设计"><span class="nav-number">2.</span> <span class="nav-text">扩展后的组件设计</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Canal的嵌入式使用"><span class="nav-number">3.</span> <span class="nav-text">Canal的嵌入式使用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#instance生成扩展"><span class="nav-number">3.1.</span> <span class="nav-text">instance生成扩展</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Embedded-API使用"><span class="nav-number">3.2.</span> <span class="nav-text">Embedded API使用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Embedded-Client"><span class="nav-number">3.3.</span> <span class="nav-text">Embedded Client</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#基于一致性Hash的负载均衡"><span class="nav-number">4.</span> <span class="nav-text">基于一致性Hash的负载均衡</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#一致性Hash"><span class="nav-number">4.1.</span> <span class="nav-text">一致性Hash</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#实现思路"><span class="nav-number">4.2.</span> <span class="nav-text">实现思路</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Kosho</span>
+
+  
+</div>
+
+<!--
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+-->
+
+
+  <div class="footer-custom">不如现在出发</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+<!-- LOCAL: You can save these files to your site and update links -->
+    
+        
+        <link rel="stylesheet" href="https://aimingoo.github.io/gitmint/style/default.css">
+        <script src="https://aimingoo.github.io/gitmint/dist/gitmint.browser.js"></script>
+    
+<!-- END LOCAL -->
+
+    
+      <style>
+        a.gitment-editor-footer-tip { display: none; }
+        .gitment-container.gitment-footer-container { display: none; }
+      </style>
+    
+
+    
+      <script type="text/javascript">
+      function renderGitment(){
+        var gitment = new Gitmint({
+            id: window.location.pathname, 
+            owner: 'koshox',
+            repo: 'koshox.github.io',
+            
+            lang: "" || navigator.language || navigator.systemLanguage || navigator.userLanguage,
+            
+            oauth: {
+            
+            
+                client_secret: '97f010895abf50a221ffb6c412a6bc51af94a439',
+            
+                client_id: '0257bbdc7139f789e280'
+            }});
+        gitment.render('gitment-container');
+      }
+
+      
+      renderGitment();
+      
+      </script>
+    
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-kosho.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-kosho.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="中间件,Kafka,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Kafka是最热门的消息中间件之一，Benchmark中领先一众对手。道理我都懂，但是Kafka为什么这么快？">
+<meta name="keywords" content="中间件,Kafka">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kafka高性能之道">
+<meta property="og:url" content="http://kosho.tech/2020/02/06/why-kafka-is-so-fast/index.html">
+<meta property="og:site_name" content="Kosho&#39;s blog">
+<meta property="og:description" content="Kafka是最热门的消息中间件之一，Benchmark中领先一众对手。道理我都懂，但是Kafka为什么这么快？">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://media.kosho.tech/blog/20200206/kafka-thread.png">
+<meta property="og:image" content="http://media.kosho.tech/blog/20200206/kafka-log-file.png">
+<meta property="og:image" content="http://media.kosho.tech/blog/20200206/kafka-index.png">
+<meta property="og:image" content="http://media.kosho.tech/blog/20200206/page-cache.png">
+<meta property="og:image" content="http://media.kosho.tech/blog/20200206/zero-copy1.png">
+<meta property="og:image" content="http://media.kosho.tech/blog/20200206/zero-copy2.png">
+<meta property="og:image" content="http://media.kosho.tech/blog/20200206/disk-seq-access.webp.jpg">
+<meta property="og:updated_time" content="2021-09-10T17:03:20.554Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Kafka高性能之道">
+<meta name="twitter:description" content="Kafka是最热门的消息中间件之一，Benchmark中领先一众对手。道理我都懂，但是Kafka为什么这么快？">
+<meta name="twitter:image" content="http://media.kosho.tech/blog/20200206/kafka-thread.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://kosho.tech/2020/02/06/why-kafka-is-so-fast/">
+
+
+
+
+
+  <title>Kafka高性能之道 | Kosho's blog</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2c1cf72231a432b1f23daf411f245e18";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Kosho's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">计算机领域没有什么事是一层中间层解决不了的，如果有，那就两层</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://kosho.tech/2020/02/06/why-kafka-is-so-fast/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Kosho">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Kosho's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Kafka高性能之道</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-02-06T23:00:42+08:00">
+                2020-02-06
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/中间件/" itemprop="url" rel="index">
+                    <span itemprop="name">中间件</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2020/02/06/why-kafka-is-so-fast/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count gitment-comments-count" data-xid="/2020/02/06/why-kafka-is-so-fast/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  1.5k
+                </span>
+              
+
+              
+
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><a href="http://kafka.apache.org" target="_blank" rel="noopener">Kafka</a>是最热门的消息中间件之一，Benchmark中领先一众对手。道理我都懂，但是Kafka为什么这么快？</p>
+<a id="more"></a>
+
+<h2 id="什么是Kafka？"><a href="#什么是Kafka？" class="headerlink" title="什么是Kafka？"></a>什么是Kafka？</h2><p>说正事之前，先看下什么是Kafka？官方对它的定义是<a href="http://kafka.apache.org/intro" target="_blank" rel="noopener">A distributed streaming platform</a>，即分布式流处理平台，一般用于系统间数据流管道和实时流处理。</p>
+<p>它有这么三个比较关键的能力：</p>
+<ol>
+<li>发布订阅，可以当做消息队列用</li>
+<li>记录的容错持久化</li>
+<li>流处理</li>
+</ol>
+<p>我觉得还有第四个，就是他的高性能。</p>
+<h2 id="Kafka线程模型"><a href="#Kafka线程模型" class="headerlink" title="Kafka线程模型"></a>Kafka线程模型</h2><p>1(Acceptor) + N(Processor) + M(KafkaRequestHandler)，在Netty，Tomcat，Nginx上面都能看见类似的设计</p>
+<p>N = num.networker.threads</p>
+<p>M = num.io.threads</p>
+<p>一个EndPoint(网卡)对于一个Acceptor，一般来说就一个</p>
+<p><img src="http://media.kosho.tech/blog/20200206/kafka-thread.png" alt="Kafka thread"></p>
+<h2 id="kafka存储模型"><a href="#kafka存储模型" class="headerlink" title="kafka存储模型"></a>kafka存储模型</h2><h3 id="日志文件"><a href="#日志文件" class="headerlink" title="日志文件"></a>日志文件</h3><p>Kafka节点上，一个Partition对应一个磁盘目录，命名为<topic_name>_<partition_id>，分为多个LogSegment，一个LogSegment，一个LogSegment对应磁盘上一个日志文件和一个索引文件，日志文件命名规则为[baseOffset].log，baseOffset是日志文件中第一条消息的offset。</partition_id></topic_name></p>
+<p>写入时数据直接append到文件末尾，所以不管文件多大，写入总是O(1)的时间复杂度。</p>
+<p><img src="http://media.kosho.tech/blog/20200206/kafka-log-file.png" alt="Kafka log"></p>
+<h3 id="索引文件"><a href="#索引文件" class="headerlink" title="索引文件"></a>索引文件</h3><p>索引是分段和稀疏索引的方式，二分查找定位日志位点，返回低位点。和日志不同，索引文件因为比较小，用mmap的方式操作，速度很快。</p>
+<p><img src="http://media.kosho.tech/blog/20200206/kafka-index.png" alt="Kafka index"></p>
+<h2 id="Kafka高性能原理"><a href="#Kafka高性能原理" class="headerlink" title="Kafka高性能原理"></a>Kafka高性能原理</h2><p>说了半天终于到最核心的地方了，也就是Kafka为什么这么快！</p>
+<h3 id="页缓存"><a href="#页缓存" class="headerlink" title="页缓存"></a>页缓存</h3><p>Kafka并不太依赖JVM内存大小，而是主要利用Page Cache，如果使用应用层缓存（JVM堆内存），会增加GC负担，增加停顿时间和延迟，创建对象的开销也会比较高。</p>
+<p>读取操作可以直接在Page Cache上进行，如果消费和生产速度相当，甚至不需要通过物理磁盘直接交换数据，这是Kafka高吞吐量的一个重要原因。</p>
+<p>这么做还有一个优势，如果Kafka重启，JVM内的Cache会失效，Page Cache依然可用。</p>
+<p><img src="http://media.kosho.tech/blog/20200206/page-cache.png" alt="Page cache"></p>
+<h3 id="零拷贝"><a href="#零拷贝" class="headerlink" title="零拷贝"></a>零拷贝</h3><p>Kafka中存在大量的网络数据持久化到磁盘（Producer到Broker）和磁盘文件通过网络发送（Broker到Consumer）的过程。这一过程的性能直接影响Kafka的整体吞吐量。</p>
+<h4 id="传统模式下的四次拷贝与四次上下文切换"><a href="#传统模式下的四次拷贝与四次上下文切换" class="headerlink" title="传统模式下的四次拷贝与四次上下文切换"></a>传统模式下的四次拷贝与四次上下文切换</h4><p>以将磁盘文件通过网络发送为例。传统模式下，一般使用如下伪代码所示的方法先将文件数据读入内存，然后通过Socket将内存中的数据发送出去。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">buffer = File.read</span><br><span class="line">Socket.send(buffer)</span><br></pre></td></tr></table></figure>
+
+<p>这一过程实际上发生了四次数据拷贝。首先通过系统调用将文件数据读入到内核态Buffer（DMA拷贝），然后应用程序将内存态Buffer数据读入到用户态Buffer（CPU拷贝），接着用户程序通过Socket发送数据时将用户态Buffer数据拷贝到内核态Buffer（CPU拷贝），最后通过DMA拷贝将数据拷贝到NIC Buffer。同时，还伴随着四次上下文切换。</p>
+<p><a href="http://www.jasongj.com/img/kafka/KafkaColumn6/BIO.png" target="_blank" rel="noopener"><img src="http://media.kosho.tech/blog/20200206/zero-copy1.png" alt="四次拷贝 四次上下文切换"></a></p>
+<h4 id="sendfile和transferTo实现零拷贝"><a href="#sendfile和transferTo实现零拷贝" class="headerlink" title="sendfile和transferTo实现零拷贝"></a>sendfile和transferTo实现零拷贝</h4><p>Linux 2.4+内核通过<code>sendfile</code>系统调用，提供了零拷贝。数据通过DMA拷贝到内核态Buffer后，直接通过DMA拷贝到NIC Buffer，无需CPU拷贝。这也是零拷贝这一说法的来源。除了减少数据拷贝外，因为整个读文件-网络发送由一个<code>sendfile</code>调用完成，整个过程只有两次上下文切换，因此大大提高了性能。</p>
+<p><a href="http://www.jasongj.com/img/kafka/KafkaColumn6/NIO.png" target="_blank" rel="noopener"><img src="http://media.kosho.tech/blog/20200206/zero-copy2.png" alt="零拷贝 两次上下文切换"></a></p>
+<p>具体实现上，Kafka的数据传输通过TransportLayer来完成，其子类<code>PlaintextTransportLayer</code>通过<a href="http://www.jasongj.com/java/nio_reactor/" target="_blank" rel="noopener">Java NIO</a>的FileChannel的<code>transferTo</code>和<code>transferFrom</code>方法实现零拷贝。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Overridepublic</span> <span class="function"><span class="keyword">long</span> <span class="title">transferFrom</span><span class="params">(FileChannel fileChannel, <span class="keyword">long</span> position, <span class="keyword">long</span> count)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> fileChannel.transferTo(position, count, socketChannel);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>注：</strong> <code>transferTo</code>和<code>transferFrom</code>并不保证一定能使用零拷贝。实际上是否能使用零拷贝与操作系统相关，如果操作系统提供<code>sendfile</code>这样的零拷贝系统调用，则这两个方法会通过这样的系统调用充分利用零拷贝的优势，否则并不能通过这两个方法本身实现零拷贝。</p>
+<h3 id="磁盘顺序写入"><a href="#磁盘顺序写入" class="headerlink" title="磁盘顺序写入"></a>磁盘顺序写入</h3><p>即使是普通的机械磁盘，顺序访问速率也接近了内存的随机访问速率。</p>
+<p>Kafka的每条消息都是append的，不会从中间写入和删除消息，保证了磁盘的顺序访问。</p>
+<p>即使是顺序读写，过于频繁的大量小IO操作一样会造成磁盘的瓶颈，此时又变成了随机读写。Kafka的策略是把消息集合在一起，批量发送，尽可能减少对磁盘的访问。所以，Kafka的Topic和Partition数量不宜过多，可以看阿里云中间件团队的这篇文章：<a href="http://jm.taobao.org/2016/04/20/kafka-vs-rocketmq-3/" target="_blank" rel="noopener">Kafka vs RocketMQ——多Topic对性能稳定性的影响</a>，超过64个Topic/Partition以后，Kafka性能会急剧下降。</p>
+<p>RocketMQ存储模型与Kafka有些差异，RocketMQ会把所有的数据存放在相同的日志文件，所以单机可以支持非常多的队列。</p>
+<p><img src="http://media.kosho.tech/blog/20200206/disk-seq-access.webp.jpg" alt="Disk sequence access"></p>
+<h3 id="全异步"><a href="#全异步" class="headerlink" title="全异步"></a>全异步</h3><p>Kafka基本上是没有阻塞操作的，调用发送方法会立即返回，等待buffer满了以后交给轮询线程，发送和接收消息，复制数据也是都是通过NetworkClient封装的poll方式。</p>
+<h3 id="批量操作"><a href="#批量操作" class="headerlink" title="批量操作"></a>批量操作</h3><p>结合磁盘顺序写入，批量无疑是非常有必要（如果用的时候每发送一条消息都调用future.get等待，性能至少下降2个数量级）。写入的时候放到RecordAccumulator进行聚合，批量压缩，还有批量刷盘等…</p>
+<h3 id="精妙的组件设计"><a href="#精妙的组件设计" class="headerlink" title="精妙的组件设计"></a>精妙的组件设计</h3><p>Kafka里有不少精妙的设计，比如说DelayedOperationPurgatory和多层TimingWheel，保证了延迟任务的高性能，Quartz和Netty也有类似的东西。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/中间件/" rel="tag"># 中间件</a>
+          
+            <a href="/tags/Kafka/" rel="tag"># Kafka</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/02/06/tenant-isolation-of-middleware-and-database/" rel="next" title="中间件、数据库的多租户设计">
+                <i class="fa fa-chevron-left"></i> 中间件、数据库的多租户设计
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/03/08/understanding-of-arthas/" rel="prev" title="Arthas运行原理">
+                Arthas运行原理 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+        <div id="gitment-container"></div>
+      
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="Kosho">
+            
+              <p class="site-author-name" itemprop="name">Kosho</p>
+              <p class="site-description motion-element" itemprop="description">计算机领域没有什么事是一层中间层解决不了的，如果有，那就两层</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">10</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">7</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/koshox" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:215501998@qq.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/zi-chuan-98-16/activities" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-gratipay"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.douban.com/people/kosho" target="_blank" title="豆瓣">
+                      
+                        <i class="fa fa-fw fa-book"></i>豆瓣</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#什么是Kafka？"><span class="nav-number">1.</span> <span class="nav-text">什么是Kafka？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Kafka线程模型"><span class="nav-number">2.</span> <span class="nav-text">Kafka线程模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#kafka存储模型"><span class="nav-number">3.</span> <span class="nav-text">kafka存储模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#日志文件"><span class="nav-number">3.1.</span> <span class="nav-text">日志文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#索引文件"><span class="nav-number">3.2.</span> <span class="nav-text">索引文件</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Kafka高性能原理"><span class="nav-number">4.</span> <span class="nav-text">Kafka高性能原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#页缓存"><span class="nav-number">4.1.</span> <span class="nav-text">页缓存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#零拷贝"><span class="nav-number">4.2.</span> <span class="nav-text">零拷贝</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#传统模式下的四次拷贝与四次上下文切换"><span class="nav-number">4.2.1.</span> <span class="nav-text">传统模式下的四次拷贝与四次上下文切换</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#sendfile和transferTo实现零拷贝"><span class="nav-number">4.2.2.</span> <span class="nav-text">sendfile和transferTo实现零拷贝</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#磁盘顺序写入"><span class="nav-number">4.3.</span> <span class="nav-text">磁盘顺序写入</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#全异步"><span class="nav-number">4.4.</span> <span class="nav-text">全异步</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#批量操作"><span class="nav-number">4.5.</span> <span class="nav-text">批量操作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#精妙的组件设计"><span class="nav-number">4.6.</span> <span class="nav-text">精妙的组件设计</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Kosho</span>
+
+  
+</div>
+
+<!--
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+-->
+
+
+  <div class="footer-custom">不如现在出发</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+<!-- LOCAL: You can save these files to your site and update links -->
+    
+        
+        <link rel="stylesheet" href="https://aimingoo.github.io/gitmint/style/default.css">
+        <script src="https://aimingoo.github.io/gitmint/dist/gitmint.browser.js"></script>
+    
+<!-- END LOCAL -->
+
+    
+      <style>
+        a.gitment-editor-footer-tip { display: none; }
+        .gitment-container.gitment-footer-container { display: none; }
+      </style>
+    
+
+    
+      <script type="text/javascript">
+      function renderGitment(){
+        var gitment = new Gitmint({
+            id: window.location.pathname, 
+            owner: 'koshox',
+            repo: 'koshox.github.io',
+            
+            lang: "" || navigator.language || navigator.systemLanguage || navigator.userLanguage,
+            
+            oauth: {
+            
+            
+                client_secret: '97f010895abf50a221ffb6c412a6bc51af94a439',
+            
+                client_id: '0257bbdc7139f789e280'
+            }});
+        gitment.render('gitment-container');
+      }
+
+      
+      renderGitment();
+      
+      </script>
+    
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
