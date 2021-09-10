@@ -38,7 +38,7 @@ jobs:
     - name: Deploy to Github Pages
       env:
         GIT_NAME: koshox
-        GIT_EMAIL: ${{ secrets.GH_EMAIL }}
+        GIT_EMAIL: ${{ secrets.GIT_EMAIL }}
         REPO: github.com/koshox/koshox.github.io
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
